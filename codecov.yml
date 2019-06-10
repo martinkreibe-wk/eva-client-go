@@ -1,0 +1,13 @@
+comment:
+  layout: header, diff, tree, changes
+coverage:
+  status:
+    patch:
+      default:
+        branches: null
+        target: 90.0
+    project:
+      default:
+        branches: null
+        target: 90.0
+        threshold: 10.0

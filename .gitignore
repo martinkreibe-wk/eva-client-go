@@ -1,0 +1,28 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, build with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Folders
+.idea
+*.iml
+.vscode/
+parsimony_staging/
+
+# Ignore goverge output files
+/reports/
+unit_tests.xml
+test_coverage.txt
+/server.crt
+/server.key
+
+*.lock
+.DS_Store
