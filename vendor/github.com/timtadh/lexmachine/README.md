@@ -38,9 +38,6 @@ analysis system for Go.
 -   [Tutorial](http://hackthology.com/writing-a-lexer-in-go-with-lexmachine.html)
 -   [How It Works](http://hackthology.com/faster-tokenization-with-a-dfa-backend-for-lexmachine.html)
 -   [Narrative Documentation](#narrative-documentation)
--   [Using `lexmachine` with `goyacc`](https://github.com/timtadh/lexmachine/tree/master/examples/sensors-parser)
-    Required reading if you want to use `lexmachine` with the standard yacc
-    implementation for Go (or its derivatives).
 -   [![GoDoc](https://godoc.org/github.com/timtadh/lexmachine?status.svg)](https://godoc.org/github.com/timtadh/lexmachine)
 
 ### What is in Box
@@ -262,7 +259,7 @@ which moves from one state to another state based on an input character. In
 general, in lexing there are two usual types of state machines used:
 Non-deterministic and Deterministic.
 
-Before a lexer (like the ones described above) can be used it must be compiled
+Before a lexer (like the ones described above) and be used it must be compiled
 into either a Non-deterministic Finite Automaton (NFA) or a [Deterministic
 Finite Automaton
 (DFA)](http://hackthology.com/faster-tokenization-with-a-dfa-backend-for-lexmachine.html).
@@ -579,7 +576,7 @@ Range' -> CharClassItem Range'
 CharClassItem -> BYTE
               -> BYTE `-` BYTE
 
-CHAR -> matches any character except '|', '+', '*', '?', '(', ')', '[', ']', '^'
+CHAR -> matches any character expect '|', '+', '*', '?', '(', ')', '[', ']', '^'
         unless escaped. Additionally '.' is returned as the wildcard character
         which matches any character. Built-in character classes are also handled
         here.

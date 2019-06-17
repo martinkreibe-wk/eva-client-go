@@ -1,31 +1,45 @@
-FROM drydock-prod.workiva.net/workiva/smithy-runner-generator:296096
-
-ARG GIT_BRANCH
-
-ARG BUILD_ARTIFACTS_TEST_REPORT=/go/src/github.com/Workiva/eva-client-go/unit_tests.xml
-
-ENV IS_SMITHY=1
-ENV REPO_NAME=eva-client-go
+#! STAGE - Build Client Library
+FROM golang:1.12-alpine3.9 as build_go_lib
 
 WORKDIR /go/src/github.com/Workiva/eva-client-go
+RUN apk add --update bash curl git gcc libc-dev openssh-client
+ENV IS_SMITHY=1
 
-COPY . /go/src/github.com/Workiva/eva-client-go
-RUN ./scripts/ci/print_env.sh
+# Setup Git Credentials
+ARG GIT_SSH_KEY
+RUN git config --global url.git@github.com:.insteadOf https://github.com/
+RUN mkdir ~/.ssh; ssh-keyscan -t rsa github.com > ~/.ssh/known_hosts
+RUN chmod -R 700 ~/.ssh; echo "${GIT_SSH_KEY}" > ~/.ssh/id_rsa; chmod 600 ~/.ssh/id_rsa
+RUN eval "$(ssh-agent -s)" && ssh-add ~/.ssh/id_rsa
 
-RUN echo "Running go format check." && \
-    ./scripts/go/check_code.sh && \
-    echo "Done."
+# Install Go Tools
+RUN curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+RUN go get -u github.com/tebeka/go2xunit
 
-RUN echo "Running tests." && \
-    ./scripts/go/test.sh && \
-    echo "Done."
+# Verify Dependencies are Vendored
+WORKDIR /go/src/github.com/Workiva/eva-client-go/
+COPY ./edn ./edn
+COPY ./eva ./eva
+COPY ./vendor ./vendor
+COPY ./Gopkg.toml ./Gopkg.toml
+RUN dep ensure -dry-run
 
-RUN echo "Getting code coverage report." && \
-    ./scripts/codecov/report.sh && \
-    echo "Done."
+# Lint Code
+COPY ./scripts ./scripts
+RUN ./scripts/ci/gofmt.sh
 
-RUN echo "Building eva-client-go." && \
-    go build . && \
-    echo "Done."
+# Unit-tests
+ENV FULL_TESTS="true"
+COPY ./test ./test
+RUN go test -v -cover -coverprofile=coverage.txt -covermode=atomic ./... -ginkgo.noColor -ginkgo.succinct | tr -d '•' | tee test_reports.txt
+RUN go2xunit -input test_reports.txt -output test_reports.xml
+ARG BUILD_ARTIFACTS_TEST_REPORT=/go/src/github.com/Workiva/eva-client-go/test_reports.xml
+
+# Code-Coverage Report
+ARG GIT_BRANCH
+RUN ./scripts/ci/codecov.sh
+
+# Ensure Client Library is Build-able
+RUN go build ./...
 
 FROM scratch
