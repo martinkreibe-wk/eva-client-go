@@ -1,0 +1,25 @@
+{
+  "name": "eva-client-go",
+  "version": "1.0.0",
+  "description": "A Golang client library for [Eva](https://github.com/Workiva/eva).",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Workiva/eva-client-go.git"
+  },
+  "author": "",
+  "license": "Apache 2.0",
+  "bugs": {
+    "url": "https://github.com/Workiva/eva-client-go/issues"
+  },
+  "homepage": "https://github.com/Workiva/eva-client-go#readme",
+  "dependencies": {
+    "markdown-toc": "^1.2.0"
+  }
+}

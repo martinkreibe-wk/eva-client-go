@@ -28,3 +28,4 @@ test_coverage.txt
 .DS_Store
 coverage.txt
 test_reports.txt
+node_modules/
