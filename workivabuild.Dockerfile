@@ -5,13 +5,6 @@ WORKDIR /go/src/github.com/Workiva/eva-client-go
 RUN apk add --update bash curl git gcc libc-dev openssh-client
 ENV IS_SMITHY=1
 
-# Setup Git Credentials
-ARG GIT_SSH_KEY
-RUN git config --global url.git@github.com:.insteadOf https://github.com/
-RUN mkdir ~/.ssh; ssh-keyscan -t rsa github.com > ~/.ssh/known_hosts
-RUN chmod -R 700 ~/.ssh; echo "${GIT_SSH_KEY}" > ~/.ssh/id_rsa; chmod 600 ~/.ssh/id_rsa
-RUN eval "$(ssh-agent -s)" && ssh-add ~/.ssh/id_rsa
-
 # Install Go Tools
 RUN curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 RUN go get -u github.com/tebeka/go2xunit

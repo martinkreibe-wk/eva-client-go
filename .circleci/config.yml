@@ -23,7 +23,7 @@ jobs:
       - save_cache:
           key: v1-repo-{{ .Environment.CIRCLE_SHA1 }}
           paths:
-            - ~/build
+            - /go/src/github.com/Workiva/eva-client-go/
 
   bundle_dependencies:
     docker:
@@ -62,16 +62,6 @@ jobs:
             - v1-node-dependencies-{{ checksum "package.json" }}
       # Verify Docs
       - run: ./.circleci/scripts/verify-docs.sh
-
-  verify_vendor_dir:
-    docker:
-      - image: circleci/golang:1.12.6
-    working_directory: /go/src/github.com/Workiva/eva-client-go/
-    steps:
-      - restore_cache:
-          keys:
-            - v1-repo-{{ .Environment.CIRCLE_SHA1 }}
-      - run: dep ensure -dry-run
 
   lint_code:
     docker:
@@ -152,13 +142,6 @@ workflows:
           filters:
             tags:
               only: /.*/
-      - verify_vendor_dir:
-          requires:
-            - bundle_dependencies
-            - checkout_code
-          filters:
-            tags:
-              only: /.*/
       - lint_code:
           requires:
             - bundle_dependencies
@@ -175,7 +158,6 @@ workflows:
               only: /.*/
       - go_build:
           requires:
-            - verify_vendor_dir
             - lint_code
             - unit_tests
           filters:
