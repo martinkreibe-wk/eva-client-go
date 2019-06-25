@@ -1,0 +1,165 @@
+version: 2.1
+
+commands:
+  early_return_for_forked_pull_requests:
+    description: >-
+      If this build is from a fork, stop executing the current job and return success.
+      This is useful to avoid steps that will fail due to missing credentials.
+    steps:
+      - run:
+          name: Early return if this build is from a forked PR
+          command: |
+            if [ -n "$CIRCLE_PR_NUMBER" ]; then
+              echo "Nothing to do for forked PRs, so marking this step successful"
+              circleci step halt
+            fi
+jobs:
+  checkout_code:
+    docker:
+      - image: circleci/golang:1.12.6
+    working_directory: /go/src/github.com/Workiva/eva-client-go/
+    steps:
+      - checkout
+      - save_cache:
+          key: v1-repo-{{ .Environment.CIRCLE_SHA1 }}
+          paths:
+            - /go/src/github.com/Workiva/eva-client-go/
+
+  bundle_dependencies:
+    docker:
+      - image: circleci/golang:1.12.6-node
+    working_directory: /go/src/github.com/Workiva/eva-client-go/
+    steps:
+      - restore_cache:
+          keys:
+            - v1-repo-{{ .Environment.CIRCLE_SHA1 }}
+            - v1-node-dependencies-{{ checksum "package.json" }}
+      - run: dep ensure -dry-run
+      - run: npm install
+      - save_cache:
+          key: v1-node-dependencies-{{ checksum "package.json" }}
+          paths:
+            - ~/node_modules
+
+  verify_license_headers:
+    docker:
+      - image: circleci/golang:1.12.6
+    working_directory: /go/src/github.com/Workiva/eva-client-go/
+    steps:
+      - restore_cache:
+          keys:
+            - v1-repo-{{ .Environment.CIRCLE_SHA1 }}
+      - run: ./.circleci/scripts/verify-license-headers.sh "go" "^// Copyright 2018-[0-9]{4} Workiva Inc.$"
+
+  verify_docs:
+    docker:
+      - image: circleci/golang:1.12.6-node
+    working_directory: /go/src/github.com/Workiva/eva-client-go/
+    steps:
+      - restore_cache:
+          keys:
+            - v1-repo-{{ .Environment.CIRCLE_SHA1 }}
+            - v1-node-dependencies-{{ checksum "package.json" }}
+      # Verify Docs
+      - run: ./.circleci/scripts/verify-docs.sh
+
+  lint_code:
+    docker:
+      - image: circleci/golang:1.12.6
+    working_directory: /go/src/github.com/Workiva/eva-client-go/
+    steps:
+      - restore_cache:
+          keys:
+            - v1-repo-{{ .Environment.CIRCLE_SHA1 }}
+      - run: ./scripts/ci/gofmt.sh
+
+  unit_tests:
+    docker:
+      - image: circleci/golang:1.12.6
+    environment:
+      FULL_TESTS: "true"
+    working_directory: /go/src/github.com/Workiva/eva-client-go/
+    steps:
+      - restore_cache:
+          keys:
+            - v1-repo-{{ .Environment.CIRCLE_SHA1 }}
+      - run: go test -v -cover -coverprofile=coverage.txt -covermode=atomic ./... -ginkgo.noColor -ginkgo.succinct
+
+  go_build:
+    docker:
+      - image: circleci/golang:1.12.6
+    working_directory: /go/src/github.com/Workiva/eva-client-go/
+    steps:
+      - restore_cache:
+          keys:
+            - v1-repo-{{ .Environment.CIRCLE_SHA1 }}
+      - run: go build ./...
+
+  verify_workiva_ci:
+    docker:
+      - image: circleci/golang:1.12.6
+    working_directory: /go/src/github.com/Workiva/eva-client-go/
+    steps:
+      - restore_cache:
+          keys:
+            - v1-repo-{{ .Environment.CIRCLE_SHA1 }}
+      - setup_remote_docker:
+          docker_layer_caching: false
+      - run: ./.circleci/scripts/verify-dockerfile.sh
+
+workflows:
+  eva_client_go_workflow:
+    jobs:
+      - checkout_code:
+          filters:
+            tags:
+              only: /.*/
+            branches:
+              ignore: /[0-9a-f]{7}_cr_no_smithy/
+      - bundle_dependencies:
+          requires:
+            - checkout_code
+          filters:
+            tags:
+              only: /.*/
+      - verify_workiva_ci:
+          requires:
+            - checkout_code
+          filters:
+            tags:
+              only: /.*/
+      - verify_license_headers:
+          requires:
+            - bundle_dependencies
+            - checkout_code
+          filters:
+            tags:
+              only: /.*/
+      - verify_docs:
+          requires:
+            - bundle_dependencies
+            - checkout_code
+          filters:
+            tags:
+              only: /.*/
+      - lint_code:
+          requires:
+            - bundle_dependencies
+            - checkout_code
+          filters:
+            tags:
+              only: /.*/
+      - unit_tests:
+          requires:
+            - bundle_dependencies
+            - checkout_code
+          filters:
+            tags:
+              only: /.*/
+      - go_build:
+          requires:
+            - lint_code
+            - unit_tests
+          filters:
+            tags:
+              only: /.*/

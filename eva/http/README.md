@@ -2,6 +2,12 @@
 
 This package is the implementation for communicating with the eva-client-service over http.
 
+<!-- toc -->
+
+- [Usage](#usage)
+
+<!-- tocstop -->
+
 To use this package include it as a blind dependency:
 
 ```go

@@ -26,3 +26,6 @@ test_coverage.txt
 
 *.lock
 .DS_Store
+coverage.txt
+test_reports.txt
+node_modules/

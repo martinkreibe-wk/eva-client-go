@@ -2,6 +2,17 @@
 
 This package is the [EDN](https://github.com/edn-format/edn) processor for the Eva project. This library parses and serializes EDN.
 
+<!-- toc -->
+
+- [Architecture](#architecture)
+  * [Element interface](#element-interface)
+- [Usage](#usage)
+  * [Parsing](#parsing)
+  * [Generating primitive elements](#generating-primitive-elements)
+- [Testing](#testing)
+
+<!-- tocstop -->
+
 ## Architecture
 
 The architecture of this package is as such, there are three main interfaces `edn.Element`, `edn.SymbolElement` and `edn.CollectionElement`
