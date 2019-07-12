@@ -15,73 +15,98 @@
 package edn
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/Workiva/eva-client-go/test"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
+type badReader struct {
+}
+
+var (
+	testError = fmt.Errorf("test error")
+)
+
+func (r *badReader) Read(p []byte) (n int, err error) {
+	return 0, testError
+}
+
 var _ = Describe("Lexer tests", func() {
-	It("should initialize without issue", func() {
+	It("should error with a nil reader with a parse error", func() {
 		lexer, err := newLexer()
 		Ω(err).Should(BeNil())
 
 		var elem Element
-		elem, err = lexer.Parse("")
+		elem, err = lexer.Parse(nil)
 		Ω(err).ShouldNot(BeNil())
 		Ω(elem).Should(BeNil())
 		Ω(err).Should(test.HaveMessage(ErrParserError))
 	})
 
-	It("should initialize without issue", func() {
+	It("should error with a bad reader with a parse error", func() {
 		lexer, err := newLexer()
 		Ω(err).Should(BeNil())
 
 		var elem Element
-		elem, err = lexer.Parse(";this comment.")
+		elem, err = lexer.Parse(&badReader{})
 		Ω(err).ShouldNot(BeNil())
 		Ω(elem).Should(BeNil())
 		Ω(err).Should(test.HaveMessage(ErrParserError))
 	})
 
-	It("should initialize without issue", func() {
+	It("should error with a empty string with a parse error", func() {
 		lexer, err := newLexer()
 		Ω(err).Should(BeNil())
 
 		var elem Element
-		elem, err = lexer.Parse("[ Foo")
+		elem, err = lexer.Parse(strings.NewReader(""))
 		Ω(err).ShouldNot(BeNil())
 		Ω(elem).Should(BeNil())
 		Ω(err).Should(test.HaveMessage(ErrParserError))
 	})
 
-	It("should initialize without issue", func() {
+	It("should error with a comment only string with a parse error", func() {
 		lexer, err := newLexer()
 		Ω(err).Should(BeNil())
 
 		var elem Element
-		elem, err = lexer.Parse("[ Foo")
+		elem, err = lexer.Parse(strings.NewReader(";this comment."))
 		Ω(err).ShouldNot(BeNil())
 		Ω(elem).Should(BeNil())
 		Ω(err).Should(test.HaveMessage(ErrParserError))
 	})
 
-	It("should break the creation if there is an error", func() {
+	It("should error with a open collection string with a parse error", func() {
+		lexer, err := newLexer()
+		Ω(err).Should(BeNil())
+
+		var elem Element
+		elem, err = lexer.Parse(strings.NewReader("[ Foo"))
+		Ω(err).ShouldNot(BeNil())
+		Ω(elem).Should(BeNil())
+		Ω(err).Should(test.HaveMessage(ErrParserError))
+	})
+
+	It("should see that a dual blank string is an element token type", func() {
 		tt := tokenType("  ")
 		Ω(tt.String()).Should(BeEquivalentTo("[Element]"))
 	})
 
-	It("should break the creation if there is an error", func() {
+	It("should be able to split a tag from the element", func() {
 		tag, value := splitTag([]byte("#my/taco foobar"), "taco")
 		Ω(tag).Should(BeEquivalentTo("my/"))
 		Ω(value).Should(BeEquivalentTo("foobar"))
 	})
 
-	It("should initialize without issue", func() {
+	It("should error with a open collection, in a collection string with a parse error", func() {
 		lexer, err := newLexer()
 		Ω(err).Should(BeNil())
 
 		var elem Element
-		elem, err = lexer.Parse("[ { :Foo  :bar ]")
+		elem, err = lexer.Parse(strings.NewReader("[ { :Foo  :bar ]"))
 		Ω(err).ShouldNot(BeNil())
 		Ω(elem).Should(BeNil())
 		Ω(err).Should(test.HaveMessage(ErrParserError))

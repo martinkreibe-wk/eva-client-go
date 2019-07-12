@@ -86,7 +86,9 @@ func message(ser Serializer, label string, index int, test *testInstance, elem E
 		v, _ := exp()
 		if m, e := NewMap(); e == nil {
 			for key, value := range v {
-				m.Append(NewStringElement(key), value)
+				if e := m.Append(NewStringElement(key), value); e != nil {
+					panic(e)
+				}
 			}
 			if expected, e = m.Serialize(ser); e != nil {
 				panic(e)
@@ -171,7 +173,7 @@ func runParserTests(elemType ElementType, definitions ...*testDefinition) {
 
 		for index, testCase := range tests {
 			It(fmt.Sprintf("should parse the expressions: `%s`", testCase.expression), func() {
-				elem, err := Parse(testCase.expression)
+				elem, err := ParseString(testCase.expression)
 				Ω(err).Should(BeNil(), message(ser, "err", index, testCase, elem))
 				Ω(elem).ShouldNot(BeNil(), message(ser, "elem", index, testCase, elem))
 				Ω(elem.ElementType()).Should(BeEquivalentTo(testCase.elemType), message(ser, "type", index, testCase, elem))
@@ -306,11 +308,11 @@ var _ = Describe("Collection Parser", func() {
 		var coll CollectionElement
 		var err error
 
-		coll, err = ParseCollection("[]")
+		coll, err = ParseCollectionString("[]")
 		Ω(err).Should(BeNil())
 		Ω(coll).ShouldNot(BeNil())
 
-		coll, err = ParseCollection("42")
+		coll, err = ParseCollectionString("42")
 		Ω(err).ShouldNot(BeNil())
 		Ω(coll).Should(BeNil())
 		Ω(err).Should(test.HaveMessage(ErrParserError))
