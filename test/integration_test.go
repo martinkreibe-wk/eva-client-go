@@ -79,7 +79,7 @@ func (tester *httpTester) transact(format string, args ...interface{}) (r *trans
 	Ω(h).Should(BeTrue())
 
 	var elem edn.Element
-	if elem, err = edn.Parse(v); err == nil {
+	if elem, err = edn.ParseString(v); err == nil {
 
 		r = &transactResult{
 			rawResult:          v,
