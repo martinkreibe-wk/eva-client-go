@@ -263,7 +263,7 @@ func (lexer *lexerImpl) completeStartup() error {
 }
 
 // Parse the value
-func (lexer *lexerImpl) Parse(data io.Reader) (elem Element, err error) {
+func (lexer *lexerImpl) Parse(data io.Reader) (_ Element, err error) {
 
 	if data == nil {
 		return nil, MakeErrorWithFormat(ErrParserError, "parse input was nil")
@@ -279,7 +279,7 @@ func (lexer *lexerImpl) Parse(data io.Reader) (elem Element, err error) {
 	}
 
 	var scanner *lexmachine.Scanner
-	if scanner, err = lexer.lex.Scanner(bytes); err == nil {
+	if scanner, err = lexer.lex.Scanner(bytes); err != nil {
 		return nil, err
 	}
 
