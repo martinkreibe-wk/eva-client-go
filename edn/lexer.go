@@ -15,10 +15,14 @@
 package edn
 
 import (
+	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"strings"
+
 	"github.com/timtadh/lexmachine"
 	"github.com/timtadh/lexmachine/machines"
-	"strings"
 )
 
 type PrimitiveType int
@@ -74,7 +78,7 @@ type Lexer interface {
 
 	AddCollectionPattern(start string, end string, processor CollectionProcessor)
 
-	Parse(data string) (Element, error)
+	Parse(data io.Reader) (Element, error)
 }
 
 func splitTag(data []byte, possible string) (tag string, value string) {
@@ -148,6 +152,7 @@ type lexerImpl struct {
 	collectionPatterns map[string]*collProcDef
 	lex                *lexmachine.Lexer
 	built              bool
+	patternAdder       func([]byte, lexmachine.Action)
 }
 
 // newLexer will create a new lexer.
@@ -163,7 +168,7 @@ func newLexer() (lexer Lexer, err error) {
 }
 
 // completeStartup of the lexer
-func (lexer *lexerImpl) completeStartup() (err error) {
+func (lexer *lexerImpl) completeStartup() error {
 
 	if !lexer.built {
 
@@ -248,32 +253,47 @@ func (lexer *lexerImpl) completeStartup() (err error) {
 		})
 
 		compile := lexer.lex.CompileNFA
-		if err = compile(); err == nil {
-			lexer.built = true
+		if err := compile(); err != nil {
+			return err
 		}
+		lexer.built = true
 	}
 
-	return err
+	return nil
 }
 
 // Parse the value
-func (lexer *lexerImpl) Parse(data string) (elem Element, err error) {
-	if err = lexer.completeStartup(); err == nil {
-		var scanner *lexmachine.Scanner
-		if scanner, err = lexer.lex.Scanner([]byte(data)); err == nil {
-			var elems []Element
-			if _, elems, err = runScanner(scanner); err == nil {
-				switch {
-				case len(elems) == 1:
-					elem = elems[0]
-				default:
-					err = MakeErrorWithFormat(ErrParserError, "Expected one result, got: %d", len(elems))
-				}
-			}
-		}
+func (lexer *lexerImpl) Parse(data io.Reader) (_ Element, err error) {
+
+	if data == nil {
+		return nil, MakeErrorWithFormat(ErrParserError, "parse input was nil")
 	}
 
-	return elem, err
+	var bytes []byte
+	if bytes, err = ioutil.ReadAll(data); err != nil {
+		return nil, MakeErrorWithFormat(ErrParserError, "parse input error: %s", err.Error())
+	}
+
+	if err = lexer.completeStartup(); err != nil {
+		return nil, err
+	}
+
+	var scanner *lexmachine.Scanner
+	if scanner, err = lexer.lex.Scanner(bytes); err != nil {
+		return nil, err
+	}
+
+	var elems []Element
+	if _, elems, err = runScanner(scanner); err != nil {
+		return nil, err
+	}
+
+	switch {
+	case len(elems) == 1:
+		return elems[0], nil
+	default:
+		return nil, MakeErrorWithFormat(ErrParserError, "Expected one result, got: %d", len(elems))
+	}
 }
 
 // AddPattern will add a pattern to the lexer
@@ -302,54 +322,56 @@ func (lexer *lexerImpl) AddCollectionPattern(start string, end string, processor
 }
 
 func (lexer *lexerImpl) addPattern(pattern []byte, action lexmachine.Action) {
+	if lexer.patternAdder != nil {
+		lexer.patternAdder(pattern, action)
+		return
+	}
 
 	lexer.lex.Add(pattern, action)
+}
 
-	// NOTE:
-	//   The following code here is to diagnose pattern issues.
+func (lexer *lexerImpl) addPatternDebugger(pattern []byte, action lexmachine.Action) {
+	lexer.lex.Add(pattern, action)
 
-	/*
+	fmt.Println("Pattern: ", string(pattern))
+	lex := lexmachine.NewLexer()
 
-		fmt.Println("Pattern: ", string(pattern))
-		lex := lexmachine.NewLexer()
+	lex.Add([]byte(pattern), func(scan *lexmachine.Scanner, match *machines.Match) (interface{}, error) {
+		fmt.Println("  Matches empty: ", string(pattern))
+		return true, nil
+	})
 
-		lex.Add([]byte(pattern), func(scan *lexmachine.Scanner, match *machines.Match) (interface{}, error) {
-			fmt.Println("  Matches empty: ", string(pattern))
-			return true, nil
-		})
+	compile := lex.CompileNFA
 
-		compile := lex.CompileNFA
+	var err error
+	if err = compile(); err == nil {
 
-		var err error
-		if err = compile(); err == nil {
+		var s *lexmachine.Scanner
+		if s, err = lex.Scanner([]byte("")); err == nil {
 
-			var s *lexmachine.Scanner
-			if s, err = lex.Scanner([]byte("")); err == nil {
+			var tok interface{}
+			var end bool
 
-				var tok interface{}
-				var end bool
-
-				if tok, err, end = s.Next(); err == nil {
-					if !end {
-						err = errors.New("expected an end of string")
-					} else {
-						if tok != nil {
-							switch v := tok.(type) {
-							case bool:
-								if v {
-									err = errors.New("expected false")
-								}
-							default:
-								err = errors.New(fmt.Sprintf("expected a bool: %#v", tok))
+			if tok, err, end = s.Next(); err == nil {
+				if !end {
+					err = errors.New("expected an end of string")
+				} else {
+					if tok != nil {
+						switch v := tok.(type) {
+						case bool:
+							if v {
+								err = errors.New("expected false")
 							}
+						default:
+							err = errors.New(fmt.Sprintf("expected a bool: %#v", tok))
 						}
 					}
 				}
 			}
 		}
+	}
 
-		if err != nil {
-			fmt.Println("  Error: ", err)
-		}
-	*/
+	if err != nil {
+		fmt.Println("  Error: ", err)
+	}
 }

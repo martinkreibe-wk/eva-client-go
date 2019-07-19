@@ -79,7 +79,7 @@ func (tester *httpTester) transact(format string, args ...interface{}) (r *trans
 	Ω(h).Should(BeTrue())
 
 	var elem edn.Element
-	if elem, err = edn.Parse(v); err == nil {
+	if elem, err = edn.ParseString(v); err == nil {
 
 		r = &transactResult{
 			rawResult:          v,
@@ -475,7 +475,7 @@ var _ = Describe("General integration tests", func() {
 				Ω(result).Should(BeEquivalentTo("1990"))
 
 				var rules edn.Element
-				rules, err = edn.Parse(DefineBookAuthorRules)
+				rules, err = edn.ParseString(DefineBookAuthorRules)
 				Ω(err).Should(BeNil())
 
 				result = t.query(QueryForBookAuthorOfPetriNetOrientedApproach, snap, rules)

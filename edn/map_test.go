@@ -15,6 +15,8 @@
 package edn
 
 import (
+	"fmt"
+
 	"github.com/Workiva/eva-client-go/test"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -424,25 +426,25 @@ var _ = Describe("Map in EDN", func() {
 		})
 
 		It("should break the creation if there is an error", func() {
-			_, err := Parse("{ :foo }")
+			_, err := ParseString("{ :foo }")
 			Ω(err).ShouldNot(BeNil())
 			Ω(err).Should(test.HaveMessage(ErrInvalidPair))
 		})
 
 		It("should break the creation if there is an error", func() {
-			_, err := Parse("{ :foo 2 ]")
+			_, err := ParseString("{ :foo 2 ]")
 			Ω(err).ShouldNot(BeNil())
 			Ω(err).Should(test.HaveMessage(ErrParserError))
 		})
 
 		It("should break the creation if there is an error", func() {
-			_, err := Parse("{ :foo 2 :taco")
+			_, err := ParseString("{ :foo 2 :taco")
 			Ω(err).ShouldNot(BeNil())
 			Ω(err).Should(test.HaveMessage(ErrParserError))
 		})
 
 		It("should break the creation if there is an error", func() {
-			_, err := Parse("{ :foo 2 \n\t")
+			_, err := ParseString("{ :foo 2 \n\t")
 			Ω(err).ShouldNot(BeNil())
 			Ω(err).Should(test.HaveMessage(ErrParserError))
 		})
@@ -481,7 +483,9 @@ var _ = Describe("Map in EDN", func() {
 
 				if err == nil {
 					t := NewIntegerElement(1)
-					t.SetTag("foo")
+					if e := t.SetTag("foo"); e != nil {
+						Fail(fmt.Sprintf("should not have gotten this: %s", e))
+					}
 					elements = map[string][2]Element{
 						"#foo 1": {t, NewIntegerElement(2)},
 					}

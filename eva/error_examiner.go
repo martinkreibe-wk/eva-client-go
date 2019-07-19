@@ -15,6 +15,8 @@
 package eva
 
 import (
+	"bytes"
+
 	"github.com/Workiva/eva-client-go/edn"
 )
 
@@ -53,7 +55,8 @@ func GetErrorExaminer(serializer edn.Serializer) (examiner ErrorExaminer, err er
 // ednErrorExaminer will examine the payload for an error.
 func ednErrorExaminer(body []byte) (err error) {
 	var elem edn.Element
-	if elem, err = edn.Parse(string(body)); elem != nil {
+
+	if elem, err = edn.Parse(bytes.NewReader(body)); elem != nil {
 		if elem.ElementType() == edn.MapType {
 			coll := elem.(edn.CollectionElement)
 			var exceptionElem edn.Element

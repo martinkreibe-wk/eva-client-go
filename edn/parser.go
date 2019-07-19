@@ -14,6 +14,11 @@
 
 package edn
 
+import (
+	"io"
+	"strings"
+)
+
 const (
 	ErrParserError = ErrorMessage("Parser error")
 )
@@ -32,7 +37,17 @@ func getLexer() (lexer Lexer, err error) {
 }
 
 // Parse the string into an edn element.
-func Parse(data string) (elem Element, err error) {
+func ParseString(data string) (elem Element, err error) {
+	return Parse(strings.NewReader(data))
+}
+
+// ParseCollection will parse a collection.
+func ParseCollectionString(data string) (elem CollectionElement, err error) {
+	return ParseCollection(strings.NewReader(data))
+}
+
+// Parse the string into an edn element.
+func Parse(data io.Reader) (elem Element, err error) {
 
 	var lex Lexer
 	if lex, err = getLexer(); err == nil {
@@ -42,7 +57,7 @@ func Parse(data string) (elem Element, err error) {
 }
 
 // ParseCollection will parse a collection.
-func ParseCollection(data string) (elem CollectionElement, err error) {
+func ParseCollection(data io.Reader) (elem CollectionElement, err error) {
 
 	var rawElem Element
 	if rawElem, err = Parse(data); err == nil {
