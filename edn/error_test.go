@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package edn_test
+package edn
 
 import (
+	"fmt"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
-	. "github.com/Workiva/eva-client-go/edn"
 )
 
 var _ = Describe("The Error constructs", func() {
@@ -29,6 +29,7 @@ var _ = Describe("The Error constructs", func() {
 			err := MakeError(myMessage, "")
 			Expect(err).ToNot(BeNil())
 			Expect(err.Message()).To(BeEquivalentTo(myMessage))
+			Expect(err.Error()).To(BeEquivalentTo(fmt.Sprintf("[%s]: ", myMessage)))
 		})
 
 		It("should ignore nil errors on append", func() {
