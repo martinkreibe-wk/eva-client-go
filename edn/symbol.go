@@ -49,16 +49,24 @@ const (
 	symbolRegex = `^((` + numericModifierSymbols + `)|((((` + numericModifierSymbols + `)(` + legalFirstSymbols + `|[[:alpha:]]))|(` + legalFirstSymbols + `|[[:alpha:]]))+(` + numericModifierSymbols + `|` + legalFirstSymbols + `|` + specialSymbols + `|[[:alnum:]])*))$`
 )
 
-// init will add the element factory to the collection of factories
-func initSymbol(lexer Lexer) (err error) {
-	lexer.AddPattern(SymbolPrimitive, "[*!?$%&=<>_a-zA-Z.]([-+*!?$%&=<>_.#]|\\w)*(/([-+*!?$%&=<>_.#]|\\w)*)?", func(tag string, tokenValue string) (el Element, e error) {
-		if el, e = NewSymbolElement(tokenValue); e == nil {
-			e = el.SetTag(tag)
-		}
-		return el, e
-	})
+func fromSymbol(tag string, tokenValue string) (Element, error) {
+	elem, err := NewSymbolElement(tokenValue)
+	if err != nil {
+		return nil, err
+	}
 
-	return err
+	err = elem.SetTag(tag)
+	if err != nil {
+		return nil, err
+	}
+
+	return elem, nil
+}
+
+// init will add the element factory to the collection of factories
+func initSymbol(lexer Lexer) error {
+	lexer.AddPattern(SymbolPrimitive, "[*!?$%&=<>_a-zA-Z.]([-+*!?$%&=<>_.#]|\\w)*(/([-+*!?$%&=<>_.#]|\\w)*)?", fromSymbol)
+	return nil
 }
 
 // symbolMatcher is the matching mechanism for symbols
@@ -95,119 +103,140 @@ type symbolElemImpl struct {
 }
 
 func encodeSymbol(prefix string, name string) string {
-	if len(prefix) > 0 {
-		name = fmt.Sprintf("%s%s%s", prefix, SymbolSeparator, name)
+	if len(prefix) == 0 {
+		return name
 	}
-	return name
+
+	return fmt.Sprintf("%s%s%s", prefix, SymbolSeparator, name)
 }
 
-func decodeSymbol(parts ...string) (prefix string, name string, err error) {
+func decodeSymbol(parts ...string) (string, string, error) {
 	switch len(parts) {
 	case 1:
 
-		switch name = parts[0]; {
+		name := parts[0]
+		switch {
 
 		// handle the case where the name was really sent in with the separator
 		case name == SymbolSeparator:
-			// Fine, break
+			return "", name, nil
 
 		case strings.Contains(name, SymbolSeparator):
-			if parts = strings.Split(name, SymbolSeparator); len(parts) == 2 {
-				if prefix = parts[0]; len(prefix) != 0 && symbolMatcher(prefix) {
-					if name = parts[1]; len(name) == 0 || !symbolMatcher(name) {
-						err = MakeErrorWithFormat(ErrInvalidSymbol, "Name[0]: %#v", parts)
-					}
-				} else {
-					err = MakeErrorWithFormat(ErrInvalidSymbol, "Prefix[0]: %#v", parts)
-				}
-			} else {
-				err = MakeErrorWithFormat(ErrInvalidSymbol, "Name[1]: %#v", parts)
+			if parts = strings.Split(name, SymbolSeparator); len(parts) != 2 {
+				return "", "", MakeErrorWithFormat(ErrInvalidSymbol, "Name[1]: %#v", parts)
 			}
+
+			prefix := parts[0]
+			if len(prefix) == 0 || !symbolMatcher(prefix) {
+				return "", "", MakeErrorWithFormat(ErrInvalidSymbol, "Prefix[0]: %#v", parts)
+			}
+
+			if name = parts[1]; len(name) == 0 || !symbolMatcher(name) {
+				return "", "", MakeErrorWithFormat(ErrInvalidSymbol, "Name[0]: %#v", parts)
+			}
+
+			return prefix, name, nil
 		default:
 			if !symbolMatcher(name) {
-				err = MakeErrorWithFormat(ErrInvalidSymbol, "Invalid Name: %#v", parts)
+				return "", "", MakeErrorWithFormat(ErrInvalidSymbol, "Invalid Name: %#v", parts)
 			}
+			return "", name, nil
 		}
 
 	case 2:
-		if prefix = parts[0]; len(prefix) != 0 && symbolMatcher(prefix) {
-			if name = parts[1]; !symbolMatcher(name) {
-				err = MakeErrorWithFormat(ErrInvalidSymbol, "Prefix[1]: %#v", parts)
-			}
-		} else {
-			err = MakeErrorWithFormat(ErrInvalidSymbol, "Prefix[2]: %#v", parts)
+
+		prefix := parts[0]
+		if len(prefix) != 0 && !symbolMatcher(prefix) {
+			return "", "", MakeErrorWithFormat(ErrInvalidSymbol, "Prefix[2]: %#v", parts)
 		}
+
+		name := parts[1]
+		if !symbolMatcher(name) {
+			return "", "", MakeErrorWithFormat(ErrInvalidSymbol, "Prefix[1]: %#v", parts)
+		}
+
+		return prefix, name, nil
 	default:
-		err = MakeError(ErrInvalidSymbol, parts)
+		return "", "", MakeError(ErrInvalidSymbol, parts)
+	}
+}
+
+func symbolSerializer(serializer Serializer, tag string, value interface{}) (string, error) {
+	switch serializer.MimeType() {
+	case EvaEdnMimeType:
+		var out string
+		if len(tag) > 0 {
+			out = TagPrefix + tag + " "
+		}
+
+		if elem, is := value.(SymbolElement); is {
+			return out + elem.AppendNameOntoNamespace(elem.Name()), nil
+		}
+
+		return out, nil
+	default:
+		return "", MakeError(ErrUnknownMimeType, serializer.MimeType())
+	}
+}
+
+func symbolEqual(left, right Element) bool {
+	leftSym, is := left.(SymbolElement)
+	if !is {
+		return false
 	}
 
-	return prefix, name, err
+	rightSym, is := right.(SymbolElement)
+	if !is {
+		return false
+	}
+
+	return leftSym.Name() == rightSym.Name() &&
+		leftSym.Prefix() == rightSym.Prefix() &&
+		leftSym.Modifier() == rightSym.Modifier()
 }
 
 // NewSymbolElement creates a new character element or an error.
-func NewSymbolElement(parts ...string) (elem SymbolElement, err error) {
+func NewSymbolElement(parts ...string) (SymbolElement, error) {
 
-	var prefix string
-	var name string
-	if prefix, name, err = decodeSymbol(parts...); err == nil {
-
-		symElem := &symbolElemImpl{
-			prefix: prefix,
-			name:   name,
-		}
-
-		var base *baseElemImpl
-		if base, err = baseFactory().make(symElem, SymbolType, func(serializer Serializer, tag string, value interface{}) (out string, err error) {
-			switch serializer.MimeType() {
-			case EvaEdnMimeType:
-				if len(tag) > 0 {
-					out = TagPrefix + tag + " "
-				}
-				if elem, ok := value.(SymbolElement); ok {
-					out += elem.AppendNameOntoNamespace(elem.Name())
-				}
-			default:
-				err = MakeError(ErrUnknownMimeType, serializer.MimeType())
-			}
-
-			return out, err
-		}); err == nil {
-
-			symElem.baseElemImpl = base
-
-			// equality for symbols are different then the normal path.
-			symElem.baseElemImpl.equality = func(left, right Element) (result bool) {
-				if leftSym, has := left.(SymbolElement); has {
-					if rightSym, has := right.(SymbolElement); has {
-						if leftSym.Name() == rightSym.Name() && leftSym.Prefix() == rightSym.Prefix() && leftSym.Modifier() == rightSym.Modifier() {
-							result = true
-						}
-					}
-				}
-
-				return result
-			}
-
-			elem = symElem
-		}
+	prefix, name, err := decodeSymbol(parts...)
+	if err != nil {
+		return nil, err
 	}
 
-	return elem, err
+	symElem := &symbolElemImpl{
+		prefix: prefix,
+		name:   name,
+	}
+
+	base, err := baseFactory().make(symElem, SymbolType, symbolSerializer)
+	if err != nil {
+		return nil, err
+	}
+
+	symElem.baseElemImpl = base
+
+	// equality for symbols are different then the normal path.
+	symElem.baseElemImpl.equality = symbolEqual
+
+	return symElem, nil
 }
 
 // AppendNameOntoNamespace will append the input name onto the namespace.
-func (elem *symbolElemImpl) AppendNameOntoNamespace(name string) (out string) {
+func (elem *symbolElemImpl) AppendNameOntoNamespace(name string) string {
 	return elem.Modifier() + encodeSymbol(elem.Prefix(), name)
 }
 
 // Equals checks if the input element is equal to this element.
-func (elem *symbolElemImpl) Equals(e Element) (result bool) {
-	if elem.ElementType() == e.ElementType() {
-		if elem.Tag() == e.Tag() {
-			result = elem.baseElemImpl.equality(elem, e)
-		}
+func (elem *symbolElemImpl) Equals(e Element) bool {
+	if elem.ElementType() != e.ElementType() {
+		return false
 	}
-	return result
+
+	if elem.Tag() != e.Tag() {
+		return false
+	}
+
+	return elem.baseElemImpl.equality(elem, e)
 }
 
 // Prefix to this symbol

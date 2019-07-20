@@ -20,56 +20,61 @@ import (
 )
 
 // fromFloat convert the float passed in (through the interface) to an Element.
-func fromFloat(input interface{}) (elem Element, e error) {
-	if v, ok := input.(float64); ok {
-		return NewFloatElement(v)
-	} else {
-		e = MakeError(ErrInvalidInput, input)
+func fromFloat(input interface{}) (Element, error) {
+	v, ok := input.(float64)
+	if !ok {
+		return nil, MakeError(ErrInvalidInput, input)
 	}
-	return elem, e
+	return NewFloatElement(v)
 }
 
 // parseFloatElem parses the string into a float Element
-func parseFloatElem(tag string, tokenValue string) (el Element, err error) {
+func parseFloatElem(tag string, tokenValue string) (Element, error) {
 
 	if strings.HasSuffix(tokenValue, "M") {
 		tokenValue = strings.TrimSuffix(tokenValue, "M")
 	}
 
-	var v float64
-	if v, err = strconv.ParseFloat(tokenValue, 64); err == nil {
-		el, err = NewFloatElement(v)
-		if err != nil {
-			return nil, err
-		}
-
-		err = el.SetTag(tag)
+	v, err := strconv.ParseFloat(tokenValue, 64)
+	if err != nil {
+		return nil, err
 	}
 
-	return el, err
+	elem, err := NewFloatElement(v)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = elem.SetTag(tag); err != nil {
+		return nil, err
+	}
+
+	return elem, nil
 }
 
 // floatSerialize takes the input value and serialize it.
-func floatSerialize(serializer Serializer, tag string, value interface{}) (out string, e error) {
+func floatSerialize(serializer Serializer, tag string, value interface{}) (string, error) {
 	switch serializer.MimeType() {
 	case EvaEdnMimeType:
+		var out string
 		if len(tag) > 0 {
 			out = TagPrefix + tag + " "
 		}
-		out += strconv.FormatFloat(value.(float64), 'E', -1, 64)
+		return out + strconv.FormatFloat(value.(float64), 'E', -1, 64), nil
 	default:
-		e = MakeError(ErrUnknownMimeType, serializer.MimeType())
+		return "", MakeError(ErrUnknownMimeType, serializer.MimeType())
 	}
-	return out, e
 }
 
 // init will add the element factory to the collection of factories
-func initFloat(lexer Lexer) (err error) {
-	if err = addElementTypeFactory(FloatType, fromFloat); err == nil {
-		lexer.AddPattern(FloatPrimitive, "[-+]?(0|[1-9][0-9]*)(\\.[0-9]*)?([eE][-+]?[0-9]+)?M?", parseFloatElem)
+func initFloat(lexer Lexer) error {
+	if err := addElementTypeFactory(FloatType, fromFloat); err != nil {
+		return err
 	}
 
-	return err
+	lexer.AddPattern(FloatPrimitive, "[-+]?(0|[1-9][0-9]*)(\\.[0-9]*)?([eE][-+]?[0-9]+)?M?", parseFloatElem)
+
+	return nil
 }
 
 // NewFloatElement creates a new float point element or an error.

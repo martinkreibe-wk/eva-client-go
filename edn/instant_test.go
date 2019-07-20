@@ -64,14 +64,16 @@ var _ = Describe("Instant in EDN", func() {
 		testValue := time.Date(2017, 12, 28, 22, 20, 30, 450, time.UTC)
 
 		It("should create an instant value with no error", func() {
-			elem := NewInstantElement(testValue)
+			elem, err := NewInstantElement(testValue)
+			Ω(err).Should(BeNil())
 			Ω(elem).ShouldNot(BeNil())
 			Ω(elem.ElementType()).Should(BeEquivalentTo(InstantType))
 			Ω(elem.Value()).Should(BeEquivalentTo(testValue))
 		})
 
 		It("should serialize the instant without an issue", func() {
-			elem := NewInstantElement(testValue)
+			elem, err := NewInstantElement(testValue)
+			Ω(err).Should(BeNil())
 			Ω(elem).ShouldNot(BeNil())
 
 			edn, err := elem.Serialize(EvaEdnMimeType)
@@ -80,10 +82,11 @@ var _ = Describe("Instant in EDN", func() {
 		})
 
 		It("should serialize the instant without an issue", func() {
-			elem := NewInstantElement(testValue)
+			elem, err := NewInstantElement(testValue)
+			Ω(err).Should(BeNil())
 			Ω(elem).ShouldNot(BeNil())
 
-			_, err := elem.Serialize(SerializerMimeType("InvalidSerializer"))
+			_, err = elem.Serialize(SerializerMimeType("InvalidSerializer"))
 			Ω(err).ShouldNot(BeNil())
 			Ω(err).Should(test.HaveMessage(ErrUnknownMimeType))
 		})

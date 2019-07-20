@@ -107,7 +107,7 @@ func initString(lexer Lexer) (err error) {
 }
 
 // NewStringElement creates a new string element or an error.
-func NewStringElement(value string) (elem Element, _ error) {
+func NewStringElement(value string) (Element, error) {
 
 	return baseFactory().make(value, StringType, func(serializer Serializer, tag string, value interface{}) (out string, e error) {
 		switch serializer.MimeType() {

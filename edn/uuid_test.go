@@ -71,14 +71,16 @@ var _ = Describe("UUID in EDN", func() {
 
 		It("should create an uuid value with no error", func() {
 
-			elem := NewUUIDElement(testValue)
+			elem, err := NewUUIDElement(testValue)
+			Ω(err).Should(BeNil())
 			Ω(elem).ShouldNot(BeNil())
 			Ω(elem.ElementType()).Should(BeEquivalentTo(UUIDType))
 			Ω(elem.Value()).Should(BeEquivalentTo(testValue))
 		})
 
 		It("should serialize the uuid without an issue", func() {
-			elem := NewUUIDElement(testValue)
+			elem, err := NewUUIDElement(testValue)
+			Ω(err).Should(BeNil())
 			Ω(elem).ShouldNot(BeNil())
 
 			edn, err := elem.Serialize(EvaEdnMimeType)
@@ -87,7 +89,8 @@ var _ = Describe("UUID in EDN", func() {
 		})
 
 		It("should serialize the uuid without an issue", func() {
-			elem := NewUUIDElement(testValue)
+			elem, err := NewUUIDElement(testValue)
+			Ω(err).Should(BeNil())
 			Ω(elem).ShouldNot(BeNil())
 
 			_, err = elem.Serialize(SerializerMimeType("InvalidSerializer"))

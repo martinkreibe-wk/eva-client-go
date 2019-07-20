@@ -280,7 +280,7 @@ var _ = Describe("Symbol in EDN", func() {
 
 			for _, symbol := range badSymbols {
 				elem, err := NewSymbolElement(symbol)
-				Ω(elem).Should(BeNil())
+				Ω(elem).Should(BeNil(), symbol)
 				Ω(err).ShouldNot(BeNil())
 				Ω(err).Should(test.HaveMessage(ErrInvalidSymbol))
 			}

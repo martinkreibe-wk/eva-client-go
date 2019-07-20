@@ -53,71 +53,62 @@ type Element interface {
 }
 
 // stereotypePrimitive returns the cleaned value and stereotype, or it returns an error.
-func stereotypePrimitive(value interface{}) (_ interface{}, stereotype ElementType, err error) {
+func stereotypePrimitive(value interface{}) (interface{}, ElementType, error) {
 
-	stereotype = UnknownType
 	switch v := value.(type) {
 	case int:
-		stereotype = IntegerType
-		value = int64(v)
+		return int64(v), IntegerType, nil
 	case int32:
-		stereotype = IntegerType
-		value = int64(v)
+		return int64(v), IntegerType, nil
 	case bool:
-		stereotype = BooleanType
-		value = v
+		return v, BooleanType, nil
 	case int64:
-		stereotype = IntegerType
+		return int64(v), IntegerType, nil
 	case float32:
-		stereotype = FloatType
-		value = float64(v)
+		return float64(v), FloatType, nil
 	case float64:
-		stereotype = FloatType
+		return v, FloatType, nil
 	case string:
 		if v == "nil" {
-			stereotype = NilType
-			value = nil
-		} else {
-			stereotype = StringType
-			if len(v) > 0 && v[0] == ':' {
-				stereotype = KeywordType
-			}
+			return nil, NilType, nil
 		}
-	case time.Time:
-		stereotype = InstantType
-	case uuid.UUID:
-		stereotype = UUIDType
-	default:
-		err = MakeErrorWithFormat(ErrUnknownMimeType, "[%T]: %#v", v, v)
-	}
 
-	return value, stereotype, err
+		if len(v) > 0 && v[0] == ':' {
+			return v, KeywordType, nil
+		}
+
+		return v, StringType, nil
+	case time.Time:
+		return v, InstantType, nil
+	case uuid.UUID:
+		return v, UUIDType, nil
+	default:
+		return nil, UnknownType, MakeErrorWithFormat(ErrUnknownMimeType, "[%T]: %#v", v, v)
+	}
 }
 
 // NewPrimitiveElement creates a new primitive element from the inputs.
-func NewPrimitiveElement(value interface{}) (elem Element, err error) {
+func NewPrimitiveElement(value interface{}) (Element, error) {
 
 	if value == nil {
 		return NewNilElement()
-	} else {
-		var is bool
-		if elem, is = value.(Element); !is {
-
-			var stereotype ElementType
-			var val interface{}
-
-			if val, stereotype, err = stereotypePrimitive(value); err == nil {
-				if factory, has := typeFactories[stereotype]; has {
-					elem, err = factory(val)
-				} else {
-					err = MakeErrorWithFormat(ErrInvalidElement, "type: %s", stereotype.Name())
-				}
-
-			}
-		}
 	}
 
-	return elem, err
+	if elem, is := value.(Element); is {
+		return elem, nil
+	}
+
+	val, stereotype, err := stereotypePrimitive(value)
+	if err != nil {
+		return nil, err
+	}
+
+	factory, has := typeFactories[stereotype]
+	if !has {
+		return nil, MakeErrorWithFormat(ErrInvalidElement, "type: %s", stereotype.Name())
+	}
+
+	return factory(val)
 }
 
 // IsPrimitive checks to see if the input variable is

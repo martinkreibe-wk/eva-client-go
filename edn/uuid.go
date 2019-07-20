@@ -25,49 +25,54 @@ const (
 )
 
 // uuidStringProcessor used the string processor but will accurately create the uuid.
-func uuidStringProcessor(tokenValue string) (el Element, e error) {
-	var id uuid.UUID
-	if id, e = uuid.ParseUUID(tokenValue); e == nil {
-		el = NewUUIDElement(id)
+func uuidStringProcessor(tokenValue string) (Element, error) {
+	id, err := uuid.ParseUUID(tokenValue)
+	if err != nil {
+		return nil, err
 	}
 
-	return el, e
+	return NewUUIDElement(id)
+}
+
+func uuidFactory(input interface{}) (Element, error) {
+	v, ok := input.(uuid.UUID)
+	if !ok {
+		return nil, MakeError(ErrInvalidInput, input)
+	}
+
+	return NewUUIDElement(v)
+}
+
+func uuidSerializer(serializer Serializer, tag string, value interface{}) (string, error) {
+	switch serializer.MimeType() {
+	case EvaEdnMimeType:
+		var out string
+		if len(tag) > 0 {
+			out = TagPrefix + tag + " "
+		}
+		return out + value.(uuid.UUID).String(), nil
+	default:
+		return "", MakeError(ErrUnknownMimeType, serializer.MimeType())
+	}
 }
 
 // init will add the element factory to the collection of factories
 func initUUID(_ Lexer) (err error) {
-	err = addElementTypeFactory(UUIDType, func(input interface{}) (elem Element, e error) {
-		if v, ok := input.(uuid.UUID); ok {
-			elem = NewUUIDElement(v)
-		} else {
-			e = MakeError(ErrInvalidInput, input)
-		}
-		return elem, e
-	})
-
-	return err
+	return addElementTypeFactory(UUIDType, uuidFactory)
 }
 
 // NewInstantElement creates a new instant element or an error.
-func NewUUIDElement(value uuid.UUID) (elem Element) {
+func NewUUIDElement(value uuid.UUID) (Element, error) {
 
-	var err error
-	if elem, err = baseFactory().make(value, UUIDType, func(serializer Serializer, tag string, value interface{}) (out string, e error) {
-		switch serializer.MimeType() {
-		case EvaEdnMimeType:
-			if len(tag) > 0 {
-				out = TagPrefix + tag + " "
-			}
-			out += value.(uuid.UUID).String()
-		default:
-			e = MakeError(ErrUnknownMimeType, serializer.MimeType())
-		}
-		return out, e
-	}); err == nil {
-		elem.SetTag(UUIDElementTag)
-	} else {
-		panic(err)
+	elem, err := baseFactory().make(value, UUIDType, uuidSerializer)
+	if err != nil {
+		return nil, err
 	}
 
-	return elem
+	err = elem.SetTag(UUIDElementTag)
+	if err != nil {
+		return nil, err
+	}
+
+	return elem, nil
 }

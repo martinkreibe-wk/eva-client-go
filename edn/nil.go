@@ -15,7 +15,7 @@
 package edn
 
 // fromNil convert the integer64 passed in (through the interface) to an Element.
-func fromNil(input interface{}) (elem Element, e error) {
+func fromNil(input interface{}) (Element, error) {
 	if input != nil {
 		return nil, MakeError(ErrInvalidInput, input)
 	}
@@ -28,11 +28,14 @@ func parseNil(tag string, _ string) (Element, error) {
 	if err != nil {
 		return nil, err
 	}
-	return elem, elem.SetTag(tag)
+	if err = elem.SetTag(tag); err != nil {
+		return nil, err
+	}
+	return elem, nil
 }
 
 // nilSerializer takes the input value and serialize it.
-func nilSerializer(serializer Serializer, tag string, value interface{}) (out string, e error) {
+func nilSerializer(serializer Serializer, tag string, _ interface{}) (out string, e error) {
 	switch serializer.MimeType() {
 	case EvaEdnMimeType:
 		if len(tag) > 0 {
@@ -45,12 +48,13 @@ func nilSerializer(serializer Serializer, tag string, value interface{}) (out st
 }
 
 // initNil will add the element factory to the collection of factories
-func initNil(lexer Lexer) (err error) {
-	if err = addElementTypeFactory(NilType, fromNil); err == nil {
-		lexer.AddPattern(LiteralPrimitive, "nil", parseNil)
+func initNil(lexer Lexer) error {
+	if err := addElementTypeFactory(NilType, fromNil); err != nil {
+		return err
 	}
 
-	return err
+	lexer.AddPattern(LiteralPrimitive, "nil", parseNil)
+	return nil
 }
 
 // NewNilElement returns the nil element or an error.

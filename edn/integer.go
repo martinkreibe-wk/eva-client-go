@@ -24,11 +24,10 @@ const (
 )
 
 // fromInt64 convert the integer64 passed in (through the interface) to an Element.
-func fromInt64(input interface{}) (elem Element, e error) {
+func fromInt64(input interface{}) (Element, error) {
 
-	var v int64
-	var ok bool
-	if v, ok = input.(int64); !ok {
+	v, ok := input.(int64)
+	if !ok {
 		return nil, MakeError(ErrInvalidInput, input)
 	}
 
@@ -36,17 +35,18 @@ func fromInt64(input interface{}) (elem Element, e error) {
 }
 
 // parseInt64Elem parses the string into a int64 Element
-func parseInt64Elem(tag string, tokenValue string) (elem Element, err error) {
+func parseInt64Elem(tag string, tokenValue string) (Element, error) {
 
 	if strings.HasSuffix(tokenValue, "N") {
 		tokenValue = strings.TrimSuffix(tokenValue, "N")
 	}
 
-	var v int64
-	if v, err = strconv.ParseInt(tokenValue, 10, 64); err != nil {
+	v, err := strconv.ParseInt(tokenValue, 10, 64)
+	if err != nil {
 		return nil, err
 	}
-	elem, err = NewIntegerElement(v)
+
+	elem, err := NewIntegerElement(v)
 	if err != nil {
 		return nil, err
 	}
@@ -59,27 +59,27 @@ func parseInt64Elem(tag string, tokenValue string) (elem Element, err error) {
 }
 
 // int64Serializer takes the input value and serialize it.
-func int64Serializer(serializer Serializer, tag string, value interface{}) (out string, e error) {
+func int64Serializer(serializer Serializer, tag string, value interface{}) (string, error) {
 	switch serializer.MimeType() {
 	case EvaEdnMimeType:
+		var out string
 		if len(tag) > 0 {
 			out = TagPrefix + tag + " "
 		}
-		out += strconv.FormatInt(value.(int64), 10)
+		return out + strconv.FormatInt(value.(int64), 10), nil
 	default:
-		e = MakeError(ErrUnknownMimeType, serializer.MimeType())
+		return "", MakeError(ErrUnknownMimeType, serializer.MimeType())
 	}
-
-	return out, e
 }
 
 // initInteger will add the element factory to the collection of factories
-func initInteger(lexer Lexer) (err error) {
-	if err = addElementTypeFactory(IntegerType, fromInt64); err == nil {
-		lexer.AddPattern(IntegerPrimitive, int64Regex, parseInt64Elem)
+func initInteger(lexer Lexer) error {
+	if err := addElementTypeFactory(IntegerType, fromInt64); err != nil {
+		return err
 	}
+	lexer.AddPattern(IntegerPrimitive, int64Regex, parseInt64Elem)
 
-	return err
+	return nil
 }
 
 // NewIntegerElement creates a new integer element or an error.

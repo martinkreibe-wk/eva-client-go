@@ -89,7 +89,7 @@ func (elem *collectionElemImpl) IterateChildren(iterator ChildIterator) (err err
 	switch v := elem.collection.(type) {
 	case []Element:
 		for i, c := range v {
-			iElem, _ := NewPrimitiveElement(int64(i))
+			iElem, _ := NewIntegerElement(int64(i))
 			if err = iterator(iElem, c); err != nil {
 				break
 			}

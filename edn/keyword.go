@@ -27,27 +27,37 @@ const (
 	ErrInvalidKeyword = ErrorMessage("Invalid keyword")
 )
 
-// init will add the element factory to the collection of factories
-func initKeyword(lexer Lexer) (err error) {
-	if err = addElementTypeFactory(KeywordType, func(input interface{}) (elem Element, e error) {
-		if v, ok := input.(string); ok {
-			elem, e = NewKeywordElement(v)
-		} else {
-			e = MakeErrorWithFormat(ErrInvalidInput, "Value: %#v", input)
-		}
-		return elem, e
-	}); err == nil {
-		lexer.AddPattern(SymbolPrimitive, ":([*!?$%&=<>]|\\w)([-+*!?$%&=<>.#]|\\w)*(/([-+*!?$%&=<>.#]|\\w)*)?", func(tag string, tokenValue string) (el Element, e error) {
-			tokenValue = strings.TrimSuffix(tokenValue, KeywordPrefix)
-			if el, e = NewKeywordElement(tokenValue); e == nil {
-				e = el.SetTag(tag)
-			}
+func fromKeyword(input interface{}) (Element, error) {
+	v, ok := input.(string)
+	if !ok {
+		return nil, MakeErrorWithFormat(ErrInvalidInput, "Value: %#v", input)
+	}
+	return NewKeywordElement(v)
+}
 
-			return el, e
-		})
+func parseKeyword(tag string, tokenValue string) (Element, error) {
+	tokenValue = strings.TrimSuffix(tokenValue, KeywordPrefix)
+
+	elem, err := NewKeywordElement(tokenValue)
+	if err != nil {
+		return elem, err
 	}
 
-	return err
+	if err = elem.SetTag(tag); err != nil {
+		return nil, err
+	}
+
+	return elem, err
+}
+
+// init will add the element factory to the collection of factories
+func initKeyword(lexer Lexer) error {
+	if err := addElementTypeFactory(KeywordType, fromKeyword); err != nil {
+		return err
+	}
+
+	lexer.AddPattern(SymbolPrimitive, ":([*!?$%&=<>]|\\w)([-+*!?$%&=<>.#]|\\w)*(/([-+*!?$%&=<>.#]|\\w)*)?", parseKeyword)
+	return nil
 }
 
 // NewKeywordElement creates a new character element or an error.
@@ -57,12 +67,12 @@ func initKeyword(lexer Lexer) (err error) {
 // platform does not have a keyword type distinct from a symbol type, the same type can be used without conflict, since
 // the mandatory leading : of keywords is disallowed for symbols. Per the symbol rules above, :/ and :/anything are not
 // legal keywords. A keyword cannot begin with ::
-func NewKeywordElement(parts ...string) (elem SymbolElement, err error) {
+func NewKeywordElement(parts ...string) (SymbolElement, error) {
 
 	// remove the : symbol if it is the first character.
 	switch len(parts) {
 	case 0:
-		err = MakeError(ErrInvalidKeyword, "0 len")
+		return nil, MakeError(ErrInvalidKeyword, "0 len")
 
 	default:
 		if strings.HasPrefix(parts[0], KeywordPrefix) {
@@ -71,27 +81,23 @@ func NewKeywordElement(parts ...string) (elem SymbolElement, err error) {
 
 		// Per the symbol rules above, :/ and :/anything are not legal keywords.
 		if strings.HasPrefix(parts[0], SymbolSeparator) {
-			err = MakeError(ErrInvalidKeyword, "found ':/'")
+			return nil, MakeError(ErrInvalidKeyword, "found ':/'")
 		}
 	}
 
-	if err == nil {
-		var symbol SymbolElement
-		if symbol, err = NewSymbolElement(parts...); err == nil {
-
-			impl := symbol.(*symbolElemImpl)
-			impl.baseElemImpl.elemType = KeywordType
-			impl.modifier = KeywordPrefix
-
-			elem = impl
+	symbol, err := NewSymbolElement(parts...)
+	if err != nil {
+		if ErrInvalidSymbol.IsEquivalent(err) {
+			if myErr, is := err.(*Error); is {
+				return nil, MakeErrorWithFormat(ErrInvalidKeyword, "msg: %s - %s", myErr.message, myErr.details)
+			}
 		}
+		return nil, err
 	}
 
-	if ErrInvalidSymbol.IsEquivalent(err) {
-		if myErr, is := err.(*Error); is {
-			err = MakeErrorWithFormat(ErrInvalidKeyword, "msg: %s - %s", myErr.message, myErr.details)
-		}
-	}
+	impl := symbol.(*symbolElemImpl)
+	impl.baseElemImpl.elemType = KeywordType
+	impl.modifier = KeywordPrefix
 
-	return elem, err
+	return impl, nil
 }

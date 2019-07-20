@@ -34,7 +34,7 @@ var specialCharacters = map[string]rune{
 }
 
 // fromChar convert the character passed in (through the interface) to an Element.
-func fromChar(input interface{}) (elem Element, e error) {
+func fromChar(input interface{}) (Element, error) {
 	v, ok := input.(rune)
 	if !ok {
 		return nil, MakeError(ErrInvalidInput, input)
@@ -44,7 +44,7 @@ func fromChar(input interface{}) (elem Element, e error) {
 }
 
 // parseSpecialCharElem parses the special string into a character Element
-func parseSpecialCharElem(tag string, tokenValue string) (elem Element, err error) {
+func parseSpecialCharElem(tag string, tokenValue string) (Element, error) {
 
 	// strip the first '\' char.
 	if !strings.HasPrefix(tokenValue, string(CharacterPrefix)) {
@@ -57,7 +57,7 @@ func parseSpecialCharElem(tag string, tokenValue string) (elem Element, err erro
 		return nil, MakeErrorWithFormat(ErrParserError, "Unknown character %s", tokenValue)
 	}
 
-	elem, err = NewCharacterElement(r)
+	elem, err := NewCharacterElement(r)
 	if err != nil {
 		return nil, err
 	}
@@ -69,51 +69,62 @@ func parseSpecialCharElem(tag string, tokenValue string) (elem Element, err erro
 }
 
 // parseSpecialCharElem parses the unicode string into a character Element
-func parseUnicodeCharElem(tag string, tokenValue string) (el Element, e error) {
+func parseUnicodeCharElem(tag string, tokenValue string) (Element, error) {
 	tokenValue = strings.TrimPrefix(tokenValue, CharacterPrefix+"u")
-	var v int64
 
 	// It isn't possible to get anything other then 4 characters, so checking isn't needed.
-	if v, e = strconv.ParseInt(tokenValue, 16, 16); e == nil {
-		el, e = NewCharacterElement(rune(v))
-		if e != nil {
-			return nil, e
-		}
-		e = el.SetTag(tag)
+	v, err := strconv.ParseInt(tokenValue, 16, 16)
+	if err != nil {
+		return nil, err
 	}
 
-	return el, e
+	elem, err := NewCharacterElement(rune(v))
+	if err != nil {
+		return nil, err
+	}
+
+	err = elem.SetTag(tag)
+	if err != nil {
+		return nil, err
+	}
+
+	return elem, nil
 }
 
 // parseSpecialCharElem parses the standard string into a character Element
-func parseCharElem(tag string, tokenValue string) (el Element, e error) {
+func parseCharElem(tag string, tokenValue string) (Element, error) {
 
 	tokenValue = strings.TrimPrefix(tokenValue, CharacterPrefix)
 	runes := []rune(tokenValue)
 
 	// It isn't possible to get anything other then a single character, so checking isn't needed.
-	el, e = NewCharacterElement(runes[0])
-	if e != nil {
-		return nil, e
+	elem, err := NewCharacterElement(runes[0])
+	if err != nil {
+		return nil, err
 	}
 
-	e = el.SetTag(tag)
+	err = elem.SetTag(tag)
+	if err != nil {
+		return nil, err
+	}
 
-	return el, e
+	return elem, nil
 }
 
 // initCharacter will add the element factory to the collection of factories
-func initCharacter(lexer Lexer) (err error) {
-	if err = addElementTypeFactory(CharacterType, fromChar); err == nil {
-		for v := range specialCharacters {
-			lexer.AddPattern(CharacterPrimitive, `\\`+v, parseSpecialCharElem)
-		}
-
-		lexer.AddPattern(CharacterPrimitive, `\\u[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]`, parseUnicodeCharElem)
-		lexer.AddPattern(CharacterPrimitive, `\\\w`, parseCharElem)
+func initCharacter(lexer Lexer) error {
+	if err := addElementTypeFactory(CharacterType, fromChar); err != nil {
+		return err
 	}
 
-	return err
+	for v := range specialCharacters {
+		lexer.AddPattern(CharacterPrimitive, `\\`+v, parseSpecialCharElem)
+	}
+
+	lexer.AddPattern(CharacterPrimitive, `\\u[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]`, parseUnicodeCharElem)
+	lexer.AddPattern(CharacterPrimitive, `\\\w`, parseCharElem)
+
+	return nil
 }
 
 // charSerializer takes the input value and serialize it.
