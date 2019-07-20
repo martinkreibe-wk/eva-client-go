@@ -37,88 +37,100 @@ var specialStrings = map[rune]rune{
 }
 
 // normalStringProcessor defines the rule for normal string processing.
-func normalStringProcessor(tokenValue string) (el Element, e error) {
+func normalStringProcessor(tokenValue string) (Element, error) {
 	length := len(tokenValue)
 
 	var out []rune
-	for i := 0; length > i && e == nil; i++ {
-		if current := rune(tokenValue[i]); current == '\\' {
-			if next := i + 1; length > next {
-				nextCh := rune(tokenValue[next])
-				if ch, has := specialStrings[nextCh]; has {
-					i++
-					out = append(out, ch)
-				} else if nextCh == 'u' && length > next+4 {
-					i++ // remove the 'u'
+	for i := 0; length > i; i++ {
+		current := rune(tokenValue[i])
+		switch current {
+		case '\\':
 
-					// Look for the next 4 characters
-					unicode := tokenValue[next+1 : next+5]
-					var v int64
-					if v, e = strconv.ParseInt(unicode, 16, 16); e == nil {
-						i = i + 4
-						out = append(out, rune(v))
-					}
-				} else {
-					e = MakeErrorWithFormat(ErrParserError, "Invalid escape character: %#U", ch)
-				}
-			} else {
-				e = MakeError(ErrParserError, "Escape character found at end of string.")
+			next := i + 1
+			if length <= next {
+				return nil, MakeError(ErrParserError, "Escape character found at end of string.")
 			}
-		} else {
+
+			nextCh := rune(tokenValue[next])
+			switch ch, has := specialStrings[nextCh]; {
+			case has:
+				i++
+				out = append(out, ch)
+			case nextCh == 'u' && length > next+4:
+				i++ // remove the 'u'
+
+				// Look for the next 4 characters
+				unicode := tokenValue[next+1 : next+5]
+				v, err := strconv.ParseInt(unicode, 16, 16)
+				if err != nil {
+					return nil, err
+				}
+				i = i + 4
+				out = append(out, rune(v))
+			default:
+				return nil, MakeErrorWithFormat(ErrParserError, "Invalid escape character: %#U", ch)
+			}
+		default:
 			out = append(out, current)
 		}
 	}
 
-	if e == nil {
-		return NewStringElement(string(out))
+	return NewStringElement(string(out))
+}
+
+func stringFactory(input interface{}) (Element, error) {
+	v, ok := input.(string)
+	if !ok {
+		return nil, MakeError(ErrInvalidInput, input)
+	}
+	return NewStringElement(v)
+}
+
+func parseString(tag string, tokenValue string) (Element, error) {
+	var proc stringProcessor
+	var has bool
+
+	if proc, has = stringProcessors[tag]; !has {
+		proc = normalStringProcessor
 	}
 
-	return el, e
+	elem, err := proc(tokenValue[1 : len(tokenValue)-1])
+	if err != nil {
+		return nil, err
+	}
+
+	err = elem.SetTag(tag)
+	if err != nil {
+		return nil, err
+	}
+
+	return elem, err
 }
 
 // init will add the element factory to the collection of factories
-func initString(lexer Lexer) (err error) {
-	if err = addElementTypeFactory(StringType, func(input interface{}) (elem Element, e error) {
-		v, ok := input.(string)
-		if !ok {
-			return nil, MakeError(ErrInvalidInput, input)
-		}
-		return NewStringElement(v)
-	}); err == nil {
-		lexer.AddPattern(StringPrimitive, "\"(\\w|\\d| |[-+*!?$%&=<>.#:()\\[\\]@^;,/{}'|`~]|\\\\([tbnrf\"'\\\\]|u[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]))*\"", func(tag string, tokenValue string) (el Element, e error) {
-			var proc stringProcessor
-			var has bool
-
-			if proc, has = stringProcessors[tag]; !has {
-				proc = normalStringProcessor
-			}
-
-			el, e = proc(tokenValue[1 : len(tokenValue)-1])
-
-			if e == nil && el != nil {
-				e = el.SetTag(tag)
-			}
-
-			return el, e
-		})
+func initString(lexer Lexer) error {
+	if err := addElementTypeFactory(StringType, stringFactory); err != nil {
+		return err
 	}
+	lexer.AddPattern(StringPrimitive, "\"(\\w|\\d| |[-+*!?$%&=<>.#:()\\[\\]@^;,/{}'|`~]|\\\\([tbnrf\"'\\\\]|u[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]))*\"", parseString)
 
-	return err
+	return nil
+}
+
+func stringSerializer(serializer Serializer, tag string, value interface{}) (string, error) {
+	switch serializer.MimeType() {
+	case EvaEdnMimeType:
+		var out string
+		if len(tag) > 0 {
+			out = TagPrefix + tag + " "
+		}
+		return out + strconv.Quote(value.(string)), nil
+	default:
+		return "", MakeError(ErrUnknownMimeType, serializer.MimeType())
+	}
 }
 
 // NewStringElement creates a new string element or an error.
 func NewStringElement(value string) (Element, error) {
-
-	return baseFactory().make(value, StringType, func(serializer Serializer, tag string, value interface{}) (out string, e error) {
-		switch serializer.MimeType() {
-		case EvaEdnMimeType:
-			if len(tag) > 0 {
-				out = TagPrefix + tag + " "
-			}
-			out += strconv.Quote(value.(string))
-		default:
-			e = MakeError(ErrUnknownMimeType, serializer.MimeType())
-		}
-		return out, e
-	})
+	return baseFactory().make(value, StringType, stringSerializer)
 }
