@@ -36,18 +36,6 @@ var _ = Describe("Nil in EDN", func() {
 		Ω(err).Should(test.HaveMessage(ErrInvalidFactory))
 	})
 
-	It("should panic if the base factory errors.", func() {
-		origFac := baseFactory
-		baseFactory = func() elementFactory { return &breakerFactory{} }
-
-		wrapper := func() {
-			NewNilElement()
-		}
-
-		Ω(wrapper).Should(Panic())
-		baseFactory = origFac
-	})
-
 	It("should create elements from the factory", func() {
 		var v interface{}
 
@@ -69,13 +57,15 @@ var _ = Describe("Nil in EDN", func() {
 	Context("with the default marshaller", func() {
 
 		It("should create an nil with no error", func() {
-			elem := NewNilElement()
+			elem, err := NewNilElement()
+			Ω(err).Should(BeNil())
 			Ω(elem).ShouldNot(BeNil())
 			Ω(elem.ElementType()).Should(BeEquivalentTo(NilType))
 		})
 
 		It("should serialize without an issue", func() {
-			elem := NewNilElement()
+			elem, err := NewNilElement()
+			Ω(err).Should(BeNil())
 
 			edn, err := elem.Serialize(EvaEdnMimeType)
 			Ω(err).Should(BeNil())
@@ -83,9 +73,10 @@ var _ = Describe("Nil in EDN", func() {
 		})
 
 		It("should serialize without an issue", func() {
-			elem := NewNilElement()
+			elem, err := NewNilElement()
+			Ω(err).Should(BeNil())
 
-			_, err := elem.Serialize(SerializerMimeType("InvalidSerializer"))
+			_, err = elem.Serialize(SerializerMimeType("InvalidSerializer"))
 			Ω(err).ShouldNot(BeNil())
 			Ω(err).Should(test.HaveMessage(ErrUnknownMimeType))
 		})

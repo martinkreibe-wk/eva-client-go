@@ -14,42 +14,46 @@
 
 package edn
 
+// fromNil convert the integer64 passed in (through the interface) to an Element.
+func fromNil(input interface{}) (elem Element, e error) {
+	if input != nil {
+		return nil, MakeError(ErrInvalidInput, input)
+	}
+	return NewNilElement()
+}
+
+// parseNil parses the string into a nil Element
+func parseNil(tag string, _ string) (Element, error) {
+	elem, err := NewNilElement()
+	if err != nil {
+		return nil, err
+	}
+	return elem, elem.SetTag(tag)
+}
+
+// nilSerializer takes the input value and serialize it.
+func nilSerializer(serializer Serializer, tag string, value interface{}) (out string, e error) {
+	switch serializer.MimeType() {
+	case EvaEdnMimeType:
+		if len(tag) > 0 {
+			out = TagPrefix + tag + " "
+		}
+		return out + "nil", nil
+	default:
+		return "", MakeError(ErrUnknownMimeType, serializer.MimeType())
+	}
+}
+
 // initNil will add the element factory to the collection of factories
 func initNil(lexer Lexer) (err error) {
-	if err = addElementTypeFactory(NilType, func(input interface{}) (elem Element, e error) {
-		if input == nil {
-			elem = NewNilElement()
-		} else {
-			e = MakeError(ErrInvalidInput, input)
-		}
-		return elem, e
-	}); err == nil {
-		lexer.AddPattern(LiteralPrimitive, "nil", func(tag string, tokenValue string) (Element, error) {
-			elem := NewNilElement()
-			return elem, elem.SetTag(tag)
-		})
+	if err = addElementTypeFactory(NilType, fromNil); err == nil {
+		lexer.AddPattern(LiteralPrimitive, "nil", parseNil)
 	}
 
 	return err
 }
 
 // NewNilElement returns the nil element or an error.
-func NewNilElement() (elem Element) {
-
-	var err error
-	if elem, err = baseFactory().make(nil, NilType, func(serializer Serializer, tag string, value interface{}) (out string, e error) {
-		switch serializer.MimeType() {
-		case EvaEdnMimeType:
-			if len(tag) > 0 {
-				out = TagPrefix + tag + " "
-			}
-			out += "nil"
-		default:
-			e = MakeError(ErrUnknownMimeType, serializer.MimeType())
-		}
-		return out, e
-	}); err != nil {
-		panic(err)
-	}
-	return elem
+func NewNilElement() (Element, error) {
+	return baseFactory().make(nil, NilType, nilSerializer)
 }

@@ -57,18 +57,6 @@ var _ = Describe("Instant in EDN", func() {
 			Ω(err).Should(test.HaveMessage(ErrInvalidInput))
 			Ω(elem).Should(BeNil())
 		})
-
-		It("should panic if the base factory errors.", func() {
-			origFac := baseFactory
-			baseFactory = func() elementFactory { return &breakerFactory{} }
-
-			wrapper := func() {
-				NewInstantElement(time.Date(2017, 12, 28, 22, 20, 30, 450, time.UTC))
-			}
-
-			Ω(wrapper).Should(Panic())
-			baseFactory = origFac
-		})
 	})
 
 	Context("with the default marshaller", func() {

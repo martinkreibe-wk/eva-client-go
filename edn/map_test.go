@@ -26,7 +26,8 @@ var _ = Describe("Map in EDN", func() {
 	Context("with the default marshaller", func() {
 
 		makePair := func(key string, value string) Pair {
-			elem := NewStringElement(value)
+			elem, err := NewStringElement(value)
+			Ω(err).Should(BeNil())
 
 			pair, err := NewPair(key, elem)
 			Ω(err).Should(BeNil())
@@ -75,7 +76,8 @@ var _ = Describe("Map in EDN", func() {
 		})
 
 		It("should create a map element with the initial values", func() {
-			elem := NewStringElement("foo")
+			elem, err := NewStringElement("foo")
+			Ω(err).Should(BeNil())
 
 			pair, err := NewPair(elem, elem)
 			Ω(err).Should(BeNil())
@@ -98,7 +100,8 @@ var _ = Describe("Map in EDN", func() {
 		})
 
 		It("should serialize a single nil entry in a map correctly", func() {
-			elem := NewNilElement()
+			elem, err := NewNilElement()
+			Ω(err).Should(BeNil())
 
 			pair, err := NewPair(elem, elem)
 			Ω(err).Should(BeNil())
@@ -389,7 +392,8 @@ var _ = Describe("Map in EDN", func() {
 			m, err := NewMap()
 			Ω(err).Should(BeNil())
 
-			elem := NewNilElement()
+			elem, err := NewNilElement()
+			Ω(err).Should(BeNil())
 
 			err = m.Append(elem)
 			Ω(err).ShouldNot(BeNil())
@@ -404,7 +408,8 @@ var _ = Describe("Map in EDN", func() {
 			raw := m.(*collectionElemImpl)
 			raw.collection = &struct{}{} // overwrite the actual data.
 
-			elem := NewNilElement()
+			elem, err := NewNilElement()
+			Ω(err).Should(BeNil())
 
 			err = m.Append(elem)
 			Ω(err).ShouldNot(BeNil())
@@ -451,43 +456,87 @@ var _ = Describe("Map in EDN", func() {
 	})
 
 	Context("Parsing", func() {
+
+		a, err := NewStringElement("a")
+		if err != nil {
+			panic(err)
+		}
+
+		zero, err := NewStringElement("0")
+		if err != nil {
+			panic(err)
+		}
+		one, err := NewStringElement("1")
+		if err != nil {
+			panic(err)
+		}
+		two, err := NewStringElement("2")
+		if err != nil {
+			panic(err)
+		}
+		braces, err := NewStringElement("[]")
+		if err != nil {
+			panic(err)
+		}
+
+		onei, err := NewIntegerElement(1)
+		if err != nil {
+			panic(err)
+		}
+
+		twoi, err := NewIntegerElement(2)
+		if err != nil {
+			panic(err)
+		}
+
+		threei, err := NewIntegerElement(3)
+		if err != nil {
+			panic(err)
+		}
+
 		runParserTests(MapType,
 			&testDefinition{"{}", func() (elements map[string][2]Element, err error) {
 				return elements, err
 			}},
 			&testDefinition{"{\"0\" \"[]\"}", func() (elements map[string][2]Element, err error) {
 				elements = map[string][2]Element{
-					"\"0\"": {NewStringElement("0"), NewStringElement("[]")},
+					"\"0\"": {zero, braces},
 				}
 				return elements, err
 			}},
 			&testDefinition{"{\"0\" 1}", func() (elements map[string][2]Element, err error) {
 				elements = map[string][2]Element{
-					"\"0\"": {NewStringElement("0"), NewIntegerElement(1)},
+					"\"0\"": {zero, onei},
 				}
 				return elements, err
 			}},
 			&testDefinition{"{\"0\" 1 \"1\" 2 \"2\" 3}", func() (elements map[string][2]Element, err error) {
 				elements = map[string][2]Element{
-					"\"0\"": {NewStringElement("0"), NewIntegerElement(1)},
-					"\"1\"": {NewStringElement("1"), NewIntegerElement(2)},
-					"\"2\"": {NewStringElement("2"), NewIntegerElement(3)},
+					"\"0\"": {zero, onei},
+					"\"1\"": {one, twoi},
+					"\"2\"": {two, threei},
 				}
 				return elements, err
 			}},
 			&testDefinition{"{#foo 1 2}", func() (elements map[string][2]Element, err error) {
 
-				one := NewIntegerElement(1)
+				one, err := NewIntegerElement(1)
+				Ω(err).Should(BeNil())
 
 				err = one.SetTag("foo")
 
 				if err == nil {
-					t := NewIntegerElement(1)
+					t, err := NewIntegerElement(1)
+					Ω(err).Should(BeNil())
 					if e := t.SetTag("foo"); e != nil {
 						Fail(fmt.Sprintf("should not have gotten this: %s", e))
 					}
+
+					tt, err := NewIntegerElement(2)
+					Ω(err).Should(BeNil())
+
 					elements = map[string][2]Element{
-						"#foo 1": {t, NewIntegerElement(2)},
+						"#foo 1": {t, tt},
 					}
 				}
 				return elements, err
@@ -496,7 +545,7 @@ var _ = Describe("Map in EDN", func() {
 				var subList CollectionElement
 				if subList, err = NewMap(); err == nil {
 					elements = map[string][2]Element{
-						"\"0\"": {NewStringElement("0"), subList},
+						"\"0\"": {zero, subList},
 					}
 				}
 				return elements, err
@@ -505,7 +554,7 @@ var _ = Describe("Map in EDN", func() {
 				var subList1 CollectionElement
 				if subList1, err = NewVector(); err == nil {
 					elements = map[string][2]Element{
-						"\"a\"": {NewStringElement("a"), subList1},
+						"\"a\"": {a, subList1},
 					}
 				}
 				return elements, err

@@ -25,31 +25,40 @@ const (
 
 // fromInt64 convert the integer64 passed in (through the interface) to an Element.
 func fromInt64(input interface{}) (elem Element, e error) {
-	if v, ok := input.(int64); ok {
-		elem = NewIntegerElement(v)
-	} else {
-		e = MakeError(ErrInvalidInput, input)
+
+	var v int64
+	var ok bool
+	if v, ok = input.(int64); !ok {
+		return nil, MakeError(ErrInvalidInput, input)
 	}
-	return elem, e
+
+	return NewIntegerElement(v)
 }
 
 // parseInt64Elem parses the string into a int64 Element
-func parseInt64Elem(tag string, tokenValue string) (el Element, e error) {
+func parseInt64Elem(tag string, tokenValue string) (elem Element, err error) {
 
 	if strings.HasSuffix(tokenValue, "N") {
 		tokenValue = strings.TrimSuffix(tokenValue, "N")
 	}
 
 	var v int64
-	if v, e = strconv.ParseInt(tokenValue, 10, 64); e == nil {
-		el = NewIntegerElement(v)
-		e = el.SetTag(tag)
+	if v, err = strconv.ParseInt(tokenValue, 10, 64); err != nil {
+		return nil, err
+	}
+	elem, err = NewIntegerElement(v)
+	if err != nil {
+		return nil, err
 	}
 
-	return el, e
+	if err = elem.SetTag(tag); err != nil {
+		return nil, err
+	}
+
+	return elem, nil
 }
 
-// int64Serializer tale the input value and serialize it.
+// int64Serializer takes the input value and serialize it.
 func int64Serializer(serializer Serializer, tag string, value interface{}) (out string, e error) {
 	switch serializer.MimeType() {
 	case EvaEdnMimeType:
@@ -74,12 +83,6 @@ func initInteger(lexer Lexer) (err error) {
 }
 
 // NewIntegerElement creates a new integer element or an error.
-func NewIntegerElement(value int64) (elem Element) {
-
-	var err error
-	if elem, err = baseFactory().make(value, IntegerType, int64Serializer); err != nil {
-		panic(err)
-	}
-
-	return elem
+func NewIntegerElement(value int64) (Element, error) {
+	return baseFactory().make(value, IntegerType, int64Serializer)
 }

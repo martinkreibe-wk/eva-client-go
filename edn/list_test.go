@@ -56,7 +56,8 @@ var _ = Describe("List in EDN", func() {
 		})
 
 		It("should create a list element with the initial values", func() {
-			elem := NewStringElement("foo")
+			elem, err := NewStringElement("foo")
+			Ω(err).Should(BeNil())
 
 			group, err := NewList(elem)
 			Ω(err).Should(BeNil())
@@ -66,8 +67,10 @@ var _ = Describe("List in EDN", func() {
 		})
 
 		It("should be able to append", func() {
-			elem := NewStringElement("foo")
-			elem2 := NewStringElement("bar")
+			elem, err := NewStringElement("foo")
+			Ω(err).Should(BeNil())
+			elem2, err := NewStringElement("bar")
+			Ω(err).Should(BeNil())
 
 			group, err := NewList(elem)
 			Ω(err).Should(BeNil())
@@ -88,8 +91,10 @@ var _ = Describe("List in EDN", func() {
 		})
 
 		It("should be able to prepend", func() {
-			elem := NewStringElement("foo")
-			elem2 := NewStringElement("bar")
+			elem, err := NewStringElement("foo")
+			Ω(err).Should(BeNil())
+			elem2, err := NewStringElement("bar")
+			Ω(err).Should(BeNil())
 
 			group, err := NewList(elem)
 			Ω(err).Should(BeNil())
@@ -110,7 +115,8 @@ var _ = Describe("List in EDN", func() {
 		})
 
 		It("should serialize a single nil entry in a list correctly", func() {
-			elem := NewNilElement()
+			elem, err := NewNilElement()
+			Ω(err).Should(BeNil())
 
 			group, err := NewList(elem)
 			Ω(err).Should(BeNil())
@@ -126,9 +132,12 @@ var _ = Describe("List in EDN", func() {
 			var group CollectionElement
 			var err error
 
-			elem1 = NewStringElement("foo")
-			elem2 = NewStringElement("bar")
-			elem3 = NewStringElement("faz")
+			elem1, err = NewStringElement("foo")
+			Ω(err).Should(BeNil())
+			elem2, err = NewStringElement("bar")
+			Ω(err).Should(BeNil())
+			elem3, err = NewStringElement("faz")
+			Ω(err).Should(BeNil())
 
 			group, err = NewList(elem1, elem2, elem3)
 			Ω(err).Should(BeNil())
@@ -152,34 +161,62 @@ var _ = Describe("List in EDN", func() {
 	})
 
 	Context("Parsing", func() {
+
+		str, err := NewStringElement("()")
+		if err != nil {
+			panic(err)
+		}
+
+		a, err := NewStringElement("a")
+		if err != nil {
+			panic(err)
+		}
+
+		one, err := NewIntegerElement(1)
+		if err != nil {
+			panic(err)
+		}
+
+		two, err := NewIntegerElement(2)
+		if err != nil {
+			panic(err)
+		}
+
+		three, err := NewIntegerElement(3)
+		if err != nil {
+			panic(err)
+		}
+
 		runParserTests(ListType,
 			&testDefinition{"()", func() (elements map[string]Element, err error) {
 				return elements, err
 			}},
 			&testDefinition{"(\"()\")", func() (elements map[string]Element, err error) {
 				elements = map[string]Element{
-					"0": NewStringElement("()"),
+					"0": str,
 				}
 				return elements, err
 			}},
 			&testDefinition{"(1)", func() (elements map[string]Element, err error) {
 				elements = map[string]Element{
-					"0": NewIntegerElement(1),
+					"0": one,
 				}
 				return elements, err
 			}},
 			&testDefinition{"(1 2 3)", func() (elements map[string]Element, err error) {
 				elements = map[string]Element{
-					"0": NewIntegerElement(1),
-					"1": NewIntegerElement(2),
-					"2": NewIntegerElement(3),
+					"0": one,
+					"1": two,
+					"2": three,
 				}
 				return elements, err
 			}},
 			&testDefinition{"(#foo 1 2 #bar 3)", func() (elements map[string]Element, err error) {
 
-				one := NewIntegerElement(1)
-				three := NewIntegerElement(3)
+				one, err := NewIntegerElement(1)
+				Ω(err).Should(BeNil())
+				three, err := NewIntegerElement(3)
+				Ω(err).Should(BeNil())
 
 				err = one.SetTag("foo")
 
@@ -190,7 +227,7 @@ var _ = Describe("List in EDN", func() {
 				if err == nil {
 					elements = map[string]Element{
 						"0": one,
-						"1": NewIntegerElement(2),
+						"1": two,
 						"2": three,
 					}
 				}
@@ -209,7 +246,7 @@ var _ = Describe("List in EDN", func() {
 				var subList1 CollectionElement
 				if subList1, err = NewList(); err == nil {
 					elements = map[string]Element{
-						"0": NewStringElement("a"),
+						"0": a,
 						"1": subList1,
 					}
 				}
@@ -220,7 +257,7 @@ var _ = Describe("List in EDN", func() {
 				if subList1, err = NewList(); err == nil {
 					elements = map[string]Element{
 						"0": subList1,
-						"1": NewStringElement("a"),
+						"1": a,
 					}
 				}
 				return elements, err

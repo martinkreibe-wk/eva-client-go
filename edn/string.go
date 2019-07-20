@@ -70,7 +70,7 @@ func normalStringProcessor(tokenValue string) (el Element, e error) {
 	}
 
 	if e == nil {
-		el = NewStringElement(string(out))
+		return NewStringElement(string(out))
 	}
 
 	return el, e
@@ -79,12 +79,11 @@ func normalStringProcessor(tokenValue string) (el Element, e error) {
 // init will add the element factory to the collection of factories
 func initString(lexer Lexer) (err error) {
 	if err = addElementTypeFactory(StringType, func(input interface{}) (elem Element, e error) {
-		if v, ok := input.(string); ok {
-			elem = NewStringElement(v)
-		} else {
-			e = MakeError(ErrInvalidInput, input)
+		v, ok := input.(string)
+		if !ok {
+			return nil, MakeError(ErrInvalidInput, input)
 		}
-		return elem, e
+		return NewStringElement(v)
 	}); err == nil {
 		lexer.AddPattern(StringPrimitive, "\"(\\w|\\d| |[-+*!?$%&=<>.#:()\\[\\]@^;,/{}'|`~]|\\\\([tbnrf\"'\\\\]|u[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]))*\"", func(tag string, tokenValue string) (el Element, e error) {
 			var proc stringProcessor
@@ -108,10 +107,9 @@ func initString(lexer Lexer) (err error) {
 }
 
 // NewStringElement creates a new string element or an error.
-func NewStringElement(value string) (elem Element) {
+func NewStringElement(value string) (elem Element, _ error) {
 
-	var err error
-	if elem, err = baseFactory().make(value, StringType, func(serializer Serializer, tag string, value interface{}) (out string, e error) {
+	return baseFactory().make(value, StringType, func(serializer Serializer, tag string, value interface{}) (out string, e error) {
 		switch serializer.MimeType() {
 		case EvaEdnMimeType:
 			if len(tag) > 0 {
@@ -122,9 +120,5 @@ func NewStringElement(value string) (elem Element) {
 			e = MakeError(ErrUnknownMimeType, serializer.MimeType())
 		}
 		return out, e
-	}); err != nil {
-		panic(err)
-	}
-
-	return elem
+	})
 }

@@ -23,96 +23,133 @@ import (
 const (
 
 	// CharacterPrefix defines the prefix for characters
-	CharacterPrefix = "\\"
+	CharacterPrefix = `\`
 )
 
-var specialCharacters = map[rune]string{
-	'\r': "return",
-	'\n': "newline",
-	' ':  "space",
-	'\t': "tab",
+var specialCharacters = map[string]rune{
+	"return":  '\r',
+	"newline": '\n',
+	"space":   ' ',
+	"tab":     '\t',
 }
 
-// init will add the element factory to the collection of factories
+// fromChar convert the character passed in (through the interface) to an Element.
+func fromChar(input interface{}) (elem Element, e error) {
+	v, ok := input.(rune)
+	if !ok {
+		return nil, MakeError(ErrInvalidInput, input)
+	}
+
+	return NewCharacterElement(v)
+}
+
+// parseSpecialCharElem parses the special string into a character Element
+func parseSpecialCharElem(tag string, tokenValue string) (elem Element, err error) {
+
+	// strip the first '\' char.
+	if !strings.HasPrefix(tokenValue, string(CharacterPrefix)) {
+		return nil, MakeError(ErrParserError, "Missing character prefix.")
+	}
+
+	var r rune
+	var has bool
+	if r, has = specialCharacters[strings.TrimPrefix(tokenValue, string(CharacterPrefix))]; !has {
+		return nil, MakeErrorWithFormat(ErrParserError, "Unknown character %s", tokenValue)
+	}
+
+	elem, err = NewCharacterElement(r)
+	if err != nil {
+		return nil, err
+	}
+	if err = elem.SetTag(tag); err != nil {
+		return nil, err
+	}
+
+	return elem, nil
+}
+
+// parseSpecialCharElem parses the unicode string into a character Element
+func parseUnicodeCharElem(tag string, tokenValue string) (el Element, e error) {
+	tokenValue = strings.TrimPrefix(tokenValue, CharacterPrefix+"u")
+	var v int64
+
+	// It isn't possible to get anything other then 4 characters, so checking isn't needed.
+	if v, e = strconv.ParseInt(tokenValue, 16, 16); e == nil {
+		el, e = NewCharacterElement(rune(v))
+		if e != nil {
+			return nil, e
+		}
+		e = el.SetTag(tag)
+	}
+
+	return el, e
+}
+
+// parseSpecialCharElem parses the standard string into a character Element
+func parseCharElem(tag string, tokenValue string) (el Element, e error) {
+
+	tokenValue = strings.TrimPrefix(tokenValue, CharacterPrefix)
+	runes := []rune(tokenValue)
+
+	// It isn't possible to get anything other then a single character, so checking isn't needed.
+	el, e = NewCharacterElement(runes[0])
+	if e != nil {
+		return nil, e
+	}
+
+	e = el.SetTag(tag)
+
+	return el, e
+}
+
+// initCharacter will add the element factory to the collection of factories
 func initCharacter(lexer Lexer) (err error) {
-	if err = addElementTypeFactory(CharacterType, func(input interface{}) (elem Element, e error) {
-		if v, ok := input.(rune); ok {
-			elem = NewCharacterElement(v)
-		} else {
-			e = MakeError(ErrInvalidInput, input)
-		}
-		return elem, e
-	}); err == nil {
-		for r, v := range specialCharacters {
-			c := r // for some reason I need to use a local variable or things get mixed up.
-			lexer.AddPattern(CharacterPrimitive, "\\\\"+v, func(tag string, tokenValue string) (Element, error) {
-				el := NewCharacterElement(c)
-				return el, el.SetTag(tag)
-			})
+	if err = addElementTypeFactory(CharacterType, fromChar); err == nil {
+		for v := range specialCharacters {
+			lexer.AddPattern(CharacterPrimitive, `\\`+v, parseSpecialCharElem)
 		}
 
-		lexer.AddPattern(CharacterPrimitive, "\\\\u[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]", func(tag string, tokenValue string) (el Element, e error) {
-			tokenValue = strings.TrimPrefix(tokenValue, CharacterPrefix+"u")
-			var v int64
-
-			// It isn't possible to get anything other then 4 characters, so checking isn't needed.
-			if v, e = strconv.ParseInt(tokenValue, 16, 16); e == nil {
-				el = NewCharacterElement(rune(v))
-				e = el.SetTag(tag)
-			}
-
-			return el, e
-		})
-
-		lexer.AddPattern(CharacterPrimitive, "\\\\\\w", func(tag string, tokenValue string) (el Element, e error) {
-
-			tokenValue = strings.TrimPrefix(tokenValue, CharacterPrefix)
-			runes := []rune(tokenValue)
-
-			// It isn't possible to get anything other then a single character, so checking isn't needed.
-			el = NewCharacterElement(runes[0])
-			e = el.SetTag(tag)
-
-			return el, e
-		})
+		lexer.AddPattern(CharacterPrimitive, `\\u[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]`, parseUnicodeCharElem)
+		lexer.AddPattern(CharacterPrimitive, `\\\w`, parseCharElem)
 	}
 
 	return err
 }
 
-// NewCharacterElement creates a new character element or an error.
-func NewCharacterElement(value rune) (elem Element) {
+// charSerializer takes the input value and serialize it.
+func charSerializer(serializer Serializer, tag string, value interface{}) (string, error) {
 
-	var err error
-	if elem, err = baseFactory().make(value, CharacterType, func(serializer Serializer, tag string, value interface{}) (out string, e error) {
-
-		switch serializer.MimeType() {
-		case EvaEdnMimeType:
-			if len(tag) > 0 {
-				out = TagPrefix + tag + " "
-			}
-
-			r := value.(rune)
-			if char, has := specialCharacters[r]; has {
-				out += CharacterPrefix + char
-			} else {
-
-				// if there is no special character, then quote the rune, remove the single quotes around this, then
-				// if it is an ASCII then make sure to prefix is intact.
-				if char = strings.Trim(fmt.Sprintf("%+q", r), "'"); strings.HasPrefix(char, CharacterPrefix) {
-					out += char
-				} else {
-					out += CharacterPrefix + char
-				}
-			}
-		default:
-			e = MakeError(ErrUnknownMimeType, serializer.MimeType())
+	switch serializer.MimeType() {
+	case EvaEdnMimeType:
+		var out string
+		if len(tag) > 0 {
+			out = TagPrefix + tag + " "
 		}
 
-		return out, e
-	}); err != nil {
-		panic(err)
-	}
+		val := value.(rune)
 
-	return elem
+		// look at the special characters first.
+		for v, r := range specialCharacters {
+			if val == r {
+				return out + CharacterPrefix + v, nil
+			}
+		}
+
+		// if there is no special character, then quote the rune, remove the single quotes around this, then
+		// if it is an ASCII then make sure to prefix is intact.
+		char := strings.Trim(fmt.Sprintf("%+q", val), "'")
+		if strings.HasPrefix(char, CharacterPrefix) {
+			return out + char, nil
+		}
+
+		return out + CharacterPrefix + char, nil
+
+	default:
+		return "", MakeError(ErrUnknownMimeType, serializer.MimeType())
+	}
+}
+
+// NewCharacterElement creates a new character element or an error.
+func NewCharacterElement(value rune) (Element, error) {
+	return baseFactory().make(value, CharacterType, charSerializer)
 }

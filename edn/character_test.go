@@ -59,18 +59,6 @@ var _ = Describe("Character in EDN", func() {
 		})
 	})
 
-	It("should panic if the base factory errors.", func() {
-		origFac := baseFactory
-		baseFactory = func() elementFactory { return &breakerFactory{} }
-
-		wrapper := func() {
-			NewCharacterElement('c')
-		}
-
-		Ω(wrapper).Should(Panic())
-		baseFactory = origFac
-	})
-
 	Context("with the default marshaller", func() {
 
 		c := 'c'
@@ -84,7 +72,8 @@ var _ = Describe("Character in EDN", func() {
 		}
 
 		It("should create an character value with no error", func() {
-			elem := NewCharacterElement(c)
+			elem, err := NewCharacterElement(c)
+			Ω(err).Should(BeNil())
 			Ω(elem).ShouldNot(BeNil())
 			Ω(elem.ElementType()).Should(BeEquivalentTo(CharacterType))
 			Ω(elem.Value()).Should(BeEquivalentTo(c))
@@ -92,7 +81,8 @@ var _ = Describe("Character in EDN", func() {
 
 		It("should serialize the character without an issue", func() {
 			for r, ser := range runes {
-				elem := NewCharacterElement(r)
+				elem, err := NewCharacterElement(r)
+				Ω(err).Should(BeNil())
 				Ω(elem).ShouldNot(BeNil())
 				Ω(elem.Value()).Should(BeEquivalentTo(r), fmt.Sprintf("For rune: %+q", r))
 
@@ -103,17 +93,19 @@ var _ = Describe("Character in EDN", func() {
 		})
 
 		It("should serialize the character without an issue", func() {
-			elem := NewCharacterElement('x')
+			elem, err := NewCharacterElement('x')
+			Ω(err).Should(BeNil())
 			Ω(elem).ShouldNot(BeNil())
 			Ω(elem.Value()).Should(BeEquivalentTo('x'), fmt.Sprintf("For rune: %+q", 'x'))
 
-			_, err := elem.Serialize(SerializerMimeType("InvalidSerializer"))
+			_, err = elem.Serialize(SerializerMimeType("InvalidSerializer"))
 			Ω(err).ShouldNot(BeNil())
 			Ω(err).Should(test.HaveMessage(ErrUnknownMimeType))
 		})
 
 		It("should create an character value with no error", func() {
-			elem := NewCharacterElement(c)
+			elem, err := NewCharacterElement(c)
+			Ω(err).Should(BeNil())
 			Ω(elem).ShouldNot(BeNil())
 			Ω(elem.ElementType()).Should(BeEquivalentTo(CharacterType))
 			Ω(elem.Value()).Should(BeEquivalentTo(c))

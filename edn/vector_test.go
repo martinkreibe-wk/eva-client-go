@@ -57,7 +57,8 @@ var _ = Describe("Vector in EDN", func() {
 		})
 
 		It("should create a vector element with the initial values", func() {
-			elem := NewStringElement("foo")
+			elem, err := NewStringElement("foo")
+			Ω(err).Should(BeNil())
 
 			group, err := NewVector(elem)
 			Ω(err).Should(BeNil())
@@ -72,7 +73,8 @@ var _ = Describe("Vector in EDN", func() {
 		})
 
 		It("should serialize a single nil entry in a vector correctly", func() {
-			elem := NewNilElement()
+			elem, err := NewNilElement()
+			Ω(err).Should(BeNil())
 
 			group, err := NewVector(elem)
 			Ω(err).Should(BeNil())
@@ -84,9 +86,12 @@ var _ = Describe("Vector in EDN", func() {
 		})
 
 		It("should serialize some nil entries in a vector correctly", func() {
-			elem1 := NewStringElement("foo")
-			elem2 := NewStringElement("bar")
-			elem3 := NewStringElement("faz")
+			elem1, err := NewStringElement("foo")
+			Ω(err).Should(BeNil())
+			elem2, err := NewStringElement("bar")
+			Ω(err).Should(BeNil())
+			elem3, err := NewStringElement("faz")
+			Ω(err).Should(BeNil())
 
 			group, err := NewVector(elem1, elem2, elem3)
 			Ω(err).Should(BeNil())
@@ -96,7 +101,8 @@ var _ = Describe("Vector in EDN", func() {
 			Ω(err).Should(BeNil())
 			Ω(edn).Should(BeEquivalentTo("[\"foo\" \"bar\" \"faz\"]"))
 
-			index := NewIntegerElement(0)
+			index, err := NewIntegerElement(0)
+			Ω(err).Should(BeNil())
 			v, err := group.Get(index)
 			Ω(err).Should(BeNil())
 			Ω(v).ShouldNot(BeNil())
@@ -112,8 +118,10 @@ var _ = Describe("Vector in EDN", func() {
 		})
 
 		It("should be able to append", func() {
-			elem := NewStringElement("foo")
-			elem2 := NewStringElement("bar")
+			elem, err := NewStringElement("foo")
+			Ω(err).Should(BeNil())
+			elem2, err := NewStringElement("bar")
+			Ω(err).Should(BeNil())
 
 			group, err := NewVector(elem)
 			Ω(err).Should(BeNil())
@@ -134,8 +142,10 @@ var _ = Describe("Vector in EDN", func() {
 		})
 
 		It("should be able to prepend", func() {
-			elem := NewStringElement("foo")
-			elem2 := NewStringElement("bar")
+			elem, err := NewStringElement("foo")
+			Ω(err).Should(BeNil())
+			elem2, err := NewStringElement("bar")
+			Ω(err).Should(BeNil())
 
 			group, err := NewVector(elem)
 			Ω(err).Should(BeNil())
@@ -156,10 +166,14 @@ var _ = Describe("Vector in EDN", func() {
 		})
 
 		It("should serialize some nil entries in a vector correctly", func() {
-			elem1 := NewStringElement("foo")
-			elem2 := NewStringElement("bar")
-			elem3 := NewStringElement("faz")
-			elem4 := NewStringElement("baz")
+			elem1, err := NewStringElement("foo")
+			Ω(err).Should(BeNil())
+			elem2, err := NewStringElement("bar")
+			Ω(err).Should(BeNil())
+			elem3, err := NewStringElement("faz")
+			Ω(err).Should(BeNil())
+			elem4, err := NewStringElement("baz")
+			Ω(err).Should(BeNil())
 
 			group, err := NewVector(elem1, elem2)
 			Ω(err).Should(BeNil())
@@ -178,11 +192,15 @@ var _ = Describe("Vector in EDN", func() {
 
 		It("should Handle Equality right with tags", func() {
 			// #db/id [-9223363240760753529 -1000074] = #db/id [-9223372036853775739 -1000075]
-			elem1a := NewIntegerElement(-9223363240760753529)
-			elem1b := NewIntegerElement(-1000074)
+			elem1a, err := NewIntegerElement(-9223363240760753529)
+			Ω(err).Should(BeNil())
+			elem1b, err := NewIntegerElement(-1000074)
+			Ω(err).Should(BeNil())
 
-			elem2a := NewIntegerElement(-9223372036853775739)
-			elem2b := NewIntegerElement(-1000075)
+			elem2a, err := NewIntegerElement(-9223372036853775739)
+			Ω(err).Should(BeNil())
+			elem2b, err := NewIntegerElement(-1000075)
+			Ω(err).Should(BeNil())
 
 			group1, err := NewVector(elem1a, elem1b)
 			group1.SetTag("db/id")
@@ -197,11 +215,15 @@ var _ = Describe("Vector in EDN", func() {
 
 		It("should Handle Equality right without tags", func() {
 			// #db/id [-9223363240760753529 -1000074] = #db/id [-9223372036853775739 -1000075]
-			elem1a := NewIntegerElement(-9223363240760753529)
-			elem1b := NewIntegerElement(-1000074)
+			elem1a, err := NewIntegerElement(-9223363240760753529)
+			Ω(err).Should(BeNil())
+			elem1b, err := NewIntegerElement(-1000074)
+			Ω(err).Should(BeNil())
 
-			elem2a := NewIntegerElement(-9223372036853775739)
-			elem2b := NewIntegerElement(-1000075)
+			elem2a, err := NewIntegerElement(-9223372036853775739)
+			Ω(err).Should(BeNil())
+			elem2b, err := NewIntegerElement(-1000075)
+			Ω(err).Should(BeNil())
 
 			group1, err := NewVector(elem1a, elem1b)
 			Ω(err).Should(BeNil())
@@ -214,13 +236,38 @@ var _ = Describe("Vector in EDN", func() {
 	})
 
 	Context("Parsing", func() {
+		vec, err := NewStringElement("[]")
+		if err != nil {
+			panic(err)
+		}
+
+		a, err := NewStringElement("a")
+		if err != nil {
+			panic(err)
+		}
+
+		one, err := NewIntegerElement(1)
+		if err != nil {
+			panic(err)
+		}
+
+		two, err := NewIntegerElement(2)
+		if err != nil {
+			panic(err)
+		}
+
+		three, err := NewIntegerElement(3)
+		if err != nil {
+			panic(err)
+		}
+
 		runParserTests(VectorType,
 			&testDefinition{"[]", func() (elements map[string]Element, err error) {
 				return elements, err
 			}},
 			&testDefinition{"[\"[]\"]", func() (elements map[string]Element, err error) {
 				elements = map[string]Element{
-					"0": NewStringElement("[]"),
+					"0": vec,
 				}
 				return elements, err
 			}},
@@ -234,41 +281,47 @@ var _ = Describe("Vector in EDN", func() {
 			}},
 			&testDefinition{"[1]", func() (elements map[string]Element, err error) {
 				elements = map[string]Element{
-					"0": NewIntegerElement(1),
+					"0": one,
 				}
 				return elements, err
 			}},
 			&testDefinition{"[1 2 3]", func() (elements map[string]Element, err error) {
 				elements = map[string]Element{
-					"0": NewIntegerElement(1),
-					"1": NewIntegerElement(2),
-					"2": NewIntegerElement(3),
+					"0": one,
+					"1": two,
+					"2": three,
 				}
 				return elements, err
 			}},
 			&testDefinition{"[#foo 1 2 #bar 3]", func() (elements map[string]Element, err error) {
 
-				one := NewIntegerElement(1)
-				three := NewIntegerElement(3)
+				onei, err := NewIntegerElement(1)
+				Ω(err).Should(BeNil())
 
-				err = one.SetTag("foo")
+				threei, err := NewIntegerElement(3)
+				Ω(err).Should(BeNil())
+
+				err = onei.SetTag("foo")
 
 				if err == nil {
-					err = three.SetTag("bar")
+					err = threei.SetTag("bar")
 				}
 
 				if err == nil {
 					elements = map[string]Element{
-						"0": one,
-						"1": NewIntegerElement(2),
-						"2": three,
+						"0": onei,
+						"1": two,
+						"2": threei,
 					}
 				}
 				return elements, err
 			}},
 
 			&testDefinition{"[[\"I just rewrote a docstring.\"]]", func() (elements map[string]Element, err error) {
-				str := NewStringElement("I just rewrote a docstring.")
+				str, err := NewStringElement("I just rewrote a docstring.")
+				if err != nil {
+					return nil, err
+				}
 				var subList CollectionElement
 				if subList, err = NewVector(str); err == nil {
 					elements = map[string]Element{
@@ -291,7 +344,7 @@ var _ = Describe("Vector in EDN", func() {
 				var subList1 CollectionElement
 				if subList1, err = NewVector(); err == nil {
 					elements = map[string]Element{
-						"0": NewStringElement("a"),
+						"0": a,
 						"1": subList1,
 					}
 				}
@@ -302,7 +355,7 @@ var _ = Describe("Vector in EDN", func() {
 				if subList1, err = NewVector(); err == nil {
 					elements = map[string]Element{
 						"0": subList1,
-						"1": NewStringElement("a"),
+						"1": a,
 					}
 				}
 				return elements, err

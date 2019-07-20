@@ -55,18 +55,6 @@ var _ = Describe("Integer in EDN", func() {
 			Ω(err).Should(test.HaveMessage(ErrInvalidInput))
 			Ω(elem).Should(BeNil())
 		})
-
-		It("should panic if the base factory errors.", func() {
-			origFac := baseFactory
-			baseFactory = func() elementFactory { return &breakerFactory{} }
-
-			wrapper := func() {
-				NewIntegerElement(123)
-			}
-
-			Ω(wrapper).Should(Panic())
-			baseFactory = origFac
-		})
 	})
 
 	Context("with the default marshaller", func() {
@@ -74,14 +62,16 @@ var _ = Describe("Integer in EDN", func() {
 		testValue := int64(12345)
 
 		It("should create an integer value with no error", func() {
-			elem := NewIntegerElement(testValue)
+			elem, err := NewIntegerElement(testValue)
+			Ω(err).Should(BeNil())
 			Ω(elem).ShouldNot(BeNil())
 			Ω(elem.ElementType()).Should(BeEquivalentTo(IntegerType))
 			Ω(elem.Value()).Should(BeEquivalentTo(testValue))
 		})
 
 		It("should serialize the integer without an issue", func() {
-			elem := NewIntegerElement(testValue)
+			elem, err := NewIntegerElement(testValue)
+			Ω(err).Should(BeNil())
 			Ω(elem).ShouldNot(BeNil())
 
 			edn, err := elem.Serialize(EvaEdnMimeType)
@@ -90,10 +80,11 @@ var _ = Describe("Integer in EDN", func() {
 		})
 
 		It("should serialize the integer without an issue", func() {
-			elem := NewIntegerElement(testValue)
+			elem, err := NewIntegerElement(testValue)
+			Ω(err).Should(BeNil())
 			Ω(elem).ShouldNot(BeNil())
 
-			_, err := elem.Serialize(SerializerMimeType("InvalidType"))
+			_, err = elem.Serialize(SerializerMimeType("InvalidType"))
 			Ω(err).ShouldNot(BeNil())
 			Ω(err).Should(test.HaveMessage(ErrUnknownMimeType))
 		})

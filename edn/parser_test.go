@@ -86,15 +86,19 @@ func message(ser Serializer, label string, index int, test *testInstance, elem E
 		v, _ := exp()
 		if m, e := NewMap(); e == nil {
 			for key, value := range v {
-				if e := m.Append(NewStringElement(key), value); e != nil {
+				k, e := NewStringElement(key)
+				if e != nil {
+					panic(e)
+				}
+				if e := m.Append(k, value); e != nil {
 					panic(e)
 				}
 			}
 			if expected, e = m.Serialize(ser); e != nil {
-				panic(e)
+				panic(fmt.Sprintf("label: %s, index: %d, test: %s, error: %+v", label, index, test.expression, e))
 			}
 		} else {
-			panic(e)
+			panic(fmt.Sprintf("label: %s, index: %d, test: %s, error: %+v", label, index, test.expression, e))
 		}
 	case func() (string, interface{}, error):
 		_, expected, _ = exp()

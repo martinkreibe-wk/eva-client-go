@@ -16,49 +16,71 @@ package edn
 
 import "strconv"
 
+// fromBool convert the boolean passed in (through the interface) to an Element.
+func fromBool(input interface{}) (elem Element, e error) {
+	if v, ok := input.(bool); ok {
+		return NewBooleanElement(v)
+	} else {
+		e = MakeError(ErrInvalidInput, input)
+	}
+	return elem, e
+}
+
+// parseBoolElem parses the string into a boolean Element
+func parseBoolElem(tag string, tokenValue string) (elem Element, err error) {
+
+	var val bool
+	switch tokenValue {
+	case "true":
+		val = true
+	case "false":
+		val = false
+	default:
+		return nil, MakeErrorWithFormat(ErrParserError, "Unknown bool: `%s`", tokenValue)
+	}
+
+	elem, err = NewBooleanElement(val)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = elem.SetTag(tag); err != nil {
+		return nil, err
+	}
+
+	return elem, nil
+}
+
+// boolSerializer takes the input value and serialize it.
+func boolSerializer(serializer Serializer, tag string, value interface{}) (out string, e error) {
+
+	switch serializer.MimeType() {
+	case EvaEdnMimeType:
+		if len(tag) > 0 {
+			out = TagPrefix + tag + " "
+		}
+		out += strconv.FormatBool(value.(bool))
+	default:
+		e = MakeError(ErrUnknownMimeType, serializer.MimeType())
+	}
+
+	return out, e
+}
+
 // initBoolean will add the element factory to the collection of factories
 func initBoolean(lexer Lexer) (err error) {
-	if err = addElementTypeFactory(BooleanType, func(input interface{}) (elem Element, e error) {
-		if v, ok := input.(bool); ok {
-			elem = NewBooleanElement(v)
-		} else {
-			e = MakeError(ErrInvalidInput, input)
-		}
-		return elem, e
-	}); err == nil {
-		lexer.AddPattern(LiteralPrimitive, "true", func(tag string, tokenValue string) (Element, error) {
-			elem := NewBooleanElement(true)
-			return elem, elem.SetTag(tag)
-		})
-		lexer.AddPattern(LiteralPrimitive, "false", func(tag string, tokenValue string) (Element, error) {
-			elem := NewBooleanElement(false)
-			return elem, elem.SetTag(tag)
-		})
+	if err = addElementTypeFactory(BooleanType, fromBool); err == nil {
+
+		// For some reason, I can not do `true|false` or any other variation without
+		// the symbol parser picking the bool up.
+		lexer.AddPattern(LiteralPrimitive, "true", parseBoolElem)
+		lexer.AddPattern(LiteralPrimitive, "false", parseBoolElem)
 	}
 
 	return err
 }
 
 // NewBooleanElement creates a new boolean element or an error.
-func NewBooleanElement(value bool) (elem Element) {
-
-	var err error
-	if elem, err = baseFactory().make(value, BooleanType, func(serializer Serializer, tag string, value interface{}) (out string, e error) {
-
-		switch serializer.MimeType() {
-		case EvaEdnMimeType:
-			if len(tag) > 0 {
-				out = TagPrefix + tag + " "
-			}
-			out += strconv.FormatBool(value.(bool))
-		default:
-			e = MakeError(ErrUnknownMimeType, serializer.MimeType())
-		}
-
-		return out, e
-	}); err != nil {
-		panic(err)
-	}
-
-	return elem
+func NewBooleanElement(value bool) (Element, error) {
+	return baseFactory().make(value, BooleanType, boolSerializer)
 }

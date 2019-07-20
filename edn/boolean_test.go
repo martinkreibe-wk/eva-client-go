@@ -51,38 +51,29 @@ var _ = Describe("Boolean in EDN", func() {
 			Ω(err).Should(test.HaveMessage(ErrInvalidInput))
 			Ω(elem).Should(BeNil())
 		})
-
-		It("should panic if the base factory errors.", func() {
-			origFac := baseFactory
-			baseFactory = func() elementFactory { return &breakerFactory{} }
-
-			wrapper := func() {
-				NewBooleanElement(true)
-			}
-
-			Ω(wrapper).Should(Panic())
-			baseFactory = origFac
-		})
 	})
 
 	Context("with the default marshaller", func() {
 
 		It("should create an true value with no error", func() {
-			elem := NewBooleanElement(true)
+			elem, err := NewBooleanElement(true)
+			Ω(err).Should(BeNil())
 			Ω(elem).ShouldNot(BeNil())
 			Ω(elem.ElementType()).Should(BeEquivalentTo(BooleanType))
 			Ω(elem.Value()).Should(BeTrue())
 		})
 
 		It("should create an false value with no error", func() {
-			elem := NewBooleanElement(false)
+			elem, err := NewBooleanElement(false)
+			Ω(err).Should(BeNil())
 			Ω(elem).ShouldNot(BeNil())
 			Ω(elem.ElementType()).Should(BeEquivalentTo(BooleanType))
 			Ω(elem.Value()).Should(BeFalse())
 		})
 
 		It("should serialize true without an issue", func() {
-			elem := NewBooleanElement(true)
+			elem, err := NewBooleanElement(true)
+			Ω(err).Should(BeNil())
 			Ω(elem).ShouldNot(BeNil())
 
 			edn, err := elem.Serialize(EvaEdnMimeType)
@@ -91,10 +82,11 @@ var _ = Describe("Boolean in EDN", func() {
 		})
 
 		It("should serialize false without an issue", func() {
-			elem := NewBooleanElement(false)
+			elem, err := NewBooleanElement(false)
+			Ω(err).Should(BeNil())
 			Ω(elem).ShouldNot(BeNil())
 
-			_, err := elem.Serialize(SerializerMimeType("InvalidSerializer"))
+			_, err = elem.Serialize(SerializerMimeType("InvalidSerializer"))
 			Ω(err).ShouldNot(BeNil())
 			Ω(err).Should(test.HaveMessage(ErrUnknownMimeType))
 		})

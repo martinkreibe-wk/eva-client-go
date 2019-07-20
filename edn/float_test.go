@@ -55,18 +55,6 @@ var _ = Describe("Float in EDN", func() {
 			Ω(err).Should(test.HaveMessage(ErrInvalidInput))
 			Ω(elem).Should(BeNil())
 		})
-
-		It("should panic if the base factory errors.", func() {
-			origFac := baseFactory
-			baseFactory = func() elementFactory { return &breakerFactory{} }
-
-			wrapper := func() {
-				NewFloatElement(123.4)
-			}
-
-			Ω(wrapper).Should(Panic())
-			baseFactory = origFac
-		})
 	})
 
 	Context("with the default marshaller", func() {
@@ -74,14 +62,16 @@ var _ = Describe("Float in EDN", func() {
 		testValue := float64(12345.67)
 
 		It("should create an float value with no error", func() {
-			elem := NewFloatElement(testValue)
+			elem, err := NewFloatElement(testValue)
+			Ω(err).Should(BeNil())
 			Ω(elem).ShouldNot(BeNil())
 			Ω(elem.ElementType()).Should(BeEquivalentTo(FloatType))
 			Ω(elem.Value()).Should(BeEquivalentTo(testValue))
 		})
 
 		It("should serialize the float without an issue", func() {
-			elem := NewFloatElement(testValue)
+			elem, err := NewFloatElement(testValue)
+			Ω(err).Should(BeNil())
 			Ω(elem).ShouldNot(BeNil())
 
 			edn, err := elem.Serialize(EvaEdnMimeType)
@@ -90,10 +80,11 @@ var _ = Describe("Float in EDN", func() {
 		})
 
 		It("should serialize the float without an issue", func() {
-			elem := NewFloatElement(testValue)
+			elem, err := NewFloatElement(testValue)
+			Ω(err).Should(BeNil())
 			Ω(elem).ShouldNot(BeNil())
 
-			_, err := elem.Serialize(SerializerMimeType("InvalidSerializer"))
+			_, err = elem.Serialize(SerializerMimeType("InvalidSerializer"))
 			Ω(err).ShouldNot(BeNil())
 			Ω(err).Should(test.HaveMessage(ErrUnknownMimeType))
 		})

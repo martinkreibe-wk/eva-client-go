@@ -98,7 +98,7 @@ func stereotypePrimitive(value interface{}) (_ interface{}, stereotype ElementTy
 func NewPrimitiveElement(value interface{}) (elem Element, err error) {
 
 	if value == nil {
-		elem = NewNilElement()
+		return NewNilElement()
 	} else {
 		var is bool
 		if elem, is = value.(Element); !is {

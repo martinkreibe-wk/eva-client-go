@@ -56,7 +56,8 @@ var _ = Describe("Set in EDN", func() {
 		})
 
 		It("should create a set element with the initial values", func() {
-			elem := NewStringElement("foo")
+			elem, err := NewStringElement("foo")
+			Ω(err).Should(BeNil())
 
 			group, err := NewSet(elem)
 			Ω(err).Should(BeNil())
@@ -66,7 +67,8 @@ var _ = Describe("Set in EDN", func() {
 		})
 
 		It("should serialize a single nil entry in a set correctly", func() {
-			elem := NewNilElement()
+			elem, err := NewNilElement()
+			Ω(err).Should(BeNil())
 
 			group, err := NewSet(elem)
 			Ω(err).Should(BeNil())
@@ -78,9 +80,12 @@ var _ = Describe("Set in EDN", func() {
 		})
 
 		It("should serialize some nil entries in a set correctly", func() {
-			elem1 := NewStringElement("foo")
-			elem2 := NewStringElement("bar")
-			elem3 := NewStringElement("faz")
+			elem1, err := NewStringElement("foo")
+			Ω(err).Should(BeNil())
+			elem2, err := NewStringElement("bar")
+			Ω(err).Should(BeNil())
+			elem3, err := NewStringElement("faz")
+			Ω(err).Should(BeNil())
 			keys := []string{
 				"foo",
 				"bar",
@@ -103,8 +108,10 @@ var _ = Describe("Set in EDN", func() {
 
 		It("should error if two elements are the same", func() {
 
-			elem1 := NewStringElement("foo")
-			elem2 := NewStringElement("foo")
+			elem1, err := NewStringElement("foo")
+			Ω(err).Should(BeNil())
+			elem2, err := NewStringElement("foo")
+			Ω(err).Should(BeNil())
 
 			group, err := NewSet(elem1, elem2)
 			Ω(err).Should(test.HaveMessage(ErrDuplicateKey))
@@ -113,6 +120,37 @@ var _ = Describe("Set in EDN", func() {
 	})
 
 	Context("Parsing", func() {
+
+		set, err := NewStringElement("#{}")
+		if err != nil {
+			panic(err)
+		}
+
+		a, err := NewStringElement("a")
+		if err != nil {
+			panic(err)
+		}
+
+		zero, err := NewIntegerElement(0)
+		if err != nil {
+			panic(err)
+		}
+
+		one, err := NewIntegerElement(1)
+		if err != nil {
+			panic(err)
+		}
+
+		two, err := NewIntegerElement(2)
+		if err != nil {
+			panic(err)
+		}
+
+		three, err := NewIntegerElement(3)
+		if err != nil {
+			panic(err)
+		}
+
 		runParserTests(SetType,
 			&testDefinition{"#{}", func() (elements map[string][2]Element, err error) {
 				return elements, err
@@ -120,40 +158,46 @@ var _ = Describe("Set in EDN", func() {
 
 			&testDefinition{"#{\"#{}\"}", func() (elements map[string][2]Element, err error) {
 				elements = map[string][2]Element{
-					"0": {NewIntegerElement(0), NewStringElement("#{}")},
+					"0": {zero, set},
 				}
 				return elements, err
 			}},
 			&testDefinition{"#{1}", func() (elements map[string][2]Element, err error) {
 				elements = map[string][2]Element{
-					"0": {NewIntegerElement(0), NewIntegerElement(1)},
+					"0": {zero, one},
 				}
 				return elements, err
 			}},
 			&testDefinition{"#{1 2 3}", func() (elements map[string][2]Element, err error) {
 				elements = map[string][2]Element{
-					"0": {NewIntegerElement(0), NewIntegerElement(1)},
-					"1": {NewIntegerElement(1), NewIntegerElement(2)},
-					"2": {NewIntegerElement(2), NewIntegerElement(3)},
+					"0": {zero, one},
+					"1": {one, two},
+					"2": {two, three},
 				}
 				return elements, err
 			}},
 			&testDefinition{"#{#foo 1 2 #bar 3}", func() (elements map[string][2]Element, err error) {
 
-				one := NewIntegerElement(1)
-				three := NewIntegerElement(3)
+				onei, err := NewIntegerElement(1)
+				if err != nil {
+					return nil, err
+				}
+				threei, err := NewIntegerElement(3)
+				if err != nil {
+					return nil, err
+				}
 
-				err = one.SetTag("foo")
+				err = onei.SetTag("foo")
 
 				if err == nil {
-					err = three.SetTag("bar")
+					err = threei.SetTag("bar")
 				}
 
 				if err == nil {
 					elements = map[string][2]Element{
-						"0": {NewIntegerElement(0), one},
-						"1": {NewIntegerElement(1), NewIntegerElement(2)},
-						"2": {NewIntegerElement(2), three},
+						"0": {zero, onei},
+						"1": {one, two},
+						"2": {two, threei},
 					}
 				}
 				return elements, err
@@ -163,7 +207,7 @@ var _ = Describe("Set in EDN", func() {
 				var subList CollectionElement
 				if subList, err = NewSet(); err == nil {
 					elements = map[string][2]Element{
-						"0": {NewIntegerElement(0), subList},
+						"0": {zero, subList},
 					}
 				}
 				return elements, err
@@ -172,8 +216,8 @@ var _ = Describe("Set in EDN", func() {
 				var subList1 CollectionElement
 				if subList1, err = NewSet(); err == nil {
 					elements = map[string][2]Element{
-						"0": {NewIntegerElement(0), NewStringElement("a")},
-						"1": {NewIntegerElement(1), subList1},
+						"0": {zero, a},
+						"1": {one, subList1},
 					}
 				}
 				return elements, err
@@ -182,8 +226,8 @@ var _ = Describe("Set in EDN", func() {
 				var subList1 CollectionElement
 				if subList1, err = NewSet(); err == nil {
 					elements = map[string][2]Element{
-						"0": {NewIntegerElement(0), subList1},
-						"1": {NewIntegerElement(1), NewStringElement("a")},
+						"0": {zero, subList1},
+						"1": {one, a},
 					}
 				}
 				return elements, err
@@ -196,8 +240,8 @@ var _ = Describe("Set in EDN", func() {
 						if err = subList1.SetTag("foo"); err == nil {
 							if err = subList2.SetTag("bar"); err == nil {
 								elements = map[string][2]Element{
-									"0": {NewIntegerElement(0), subList1},
-									"1": {NewIntegerElement(1), subList2},
+									"0": {zero, subList1},
+									"1": {one, subList2},
 								}
 							}
 						}

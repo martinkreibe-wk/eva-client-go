@@ -59,18 +59,6 @@ var _ = Describe("UUID in EDN", func() {
 			Ω(err).Should(test.HaveMessage(ErrInvalidInput))
 			Ω(elem).Should(BeNil())
 		})
-
-		It("should panic if the base factory errors.", func() {
-			origFac := baseFactory
-			baseFactory = func() elementFactory { return &breakerFactory{} }
-
-			wrapper := func() {
-				NewUUIDElement(uuid.RandomUUID())
-			}
-
-			Ω(wrapper).Should(Panic())
-			baseFactory = origFac
-		})
 	})
 
 	Context("with the default marshaller", func() {
