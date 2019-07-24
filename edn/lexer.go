@@ -19,7 +19,7 @@ import (
 )
 
 type PrimitiveProcessor func(value string) (Element, error)
-type CollectionProcessor func(elements []Element) (el CollectionElement, e error)
+type CollectionProcessor func(elements ...Element) (el CollectionElement, e error)
 
 // ElementTypeFactory defines the factory for an element.
 type ElementTypeFactory func(interface{}) (Element, error)

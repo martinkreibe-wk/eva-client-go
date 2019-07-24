@@ -89,12 +89,7 @@ func stereotypePrimitive(value interface{}) (interface{}, ElementType, string, e
 
 // NewPrimitiveElement creates a new primitive element from the inputs.
 func NewPrimitiveElement(value interface{}) (Element, error) {
-	lexer, err := newLexer()
-	if err != nil {
-		return nil, err
-	}
-
-	return NewPrimitiveElementWithLexer(lexer, value)
+	return NewPrimitiveElementWithLexer(DefaultLexer, value)
 }
 
 // NewPrimitiveElement creates a new primitive element from the inputs.

@@ -104,5 +104,5 @@ func stringSerializer(serializer Serializer, tag string, value interface{}) (str
 
 // NewStringElement creates a new string element or an error.
 func NewStringElement(value string) (Element, error) {
-	return baseFactory().make(value, StringType, stringSerializer)
+	return baseFactory().make(value, StringType, NoTag, stringSerializer)
 }

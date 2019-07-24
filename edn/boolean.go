@@ -58,5 +58,5 @@ func boolSerializer(serializer Serializer, tag string, value interface{}) (strin
 
 // NewBooleanElement creates a new boolean element or an error.
 func NewBooleanElement(value bool) (Element, error) {
-	return baseFactory().make(value, BooleanType, boolSerializer)
+	return baseFactory().make(value, BooleanType, NoTag, boolSerializer)
 }

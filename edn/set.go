@@ -46,7 +46,7 @@ func NewSet(elements ...Element) (elem CollectionElement, err error) {
 		}
 
 		var base *baseElemImpl
-		if base, err = baseFactory().make(coll, SetType, collectionSerialization(false)); err == nil {
+		if base, err = baseFactory().make(coll, SetType, NoTag, collectionSerialization(false)); err == nil {
 			coll.baseElemImpl = base
 			if err = coll.Append(elements...); err == nil {
 				elem = coll

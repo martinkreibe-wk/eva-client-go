@@ -28,9 +28,7 @@ var _ = Describe("Instant in EDN", func() {
 		It("should create elements from the factory", func() {
 			v := time.Date(2017, 12, 28, 22, 20, 30, 450, time.UTC)
 
-			lexer, err := newLexer()
-			Ω(err).Should(BeNil())
-			fact, has := lexer.GetFactory(InstantType, InstantElementTag)
+			fact, has := DefaultLexer.GetFactory(InstantType, InstantElementTag)
 			Ω(has).Should(BeTrue())
 			elem, err := fact(v)
 			Ω(err).Should(BeNil())
@@ -41,9 +39,7 @@ var _ = Describe("Instant in EDN", func() {
 		It("should not create elements from the factory if the input is not a the right type", func() {
 			v := "foo"
 
-			lexer, err := newLexer()
-			Ω(err).Should(BeNil())
-			fact, has := lexer.GetFactory(InstantType, InstantElementTag)
+			fact, has := DefaultLexer.GetFactory(InstantType, InstantElementTag)
 			Ω(has).Should(BeTrue())
 			elem, err := fact(v)
 			Ω(err).ShouldNot(BeNil())

@@ -46,7 +46,7 @@ func NewList(elements ...Element) (elem CollectionElement, err error) {
 		}
 
 		var base *baseElemImpl
-		if base, err = baseFactory().make(coll, ListType, collectionSerialization(false)); err == nil {
+		if base, err = baseFactory().make(coll, ListType, NoTag, collectionSerialization(false)); err == nil {
 			coll.baseElemImpl = base
 			elem = coll
 			err = elem.Append(elements...)

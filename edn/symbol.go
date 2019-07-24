@@ -200,7 +200,7 @@ func NewSymbolElement(parts ...string) (SymbolElement, error) {
 		name:   name,
 	}
 
-	base, err := baseFactory().make(symElem, SymbolType, symbolSerializer)
+	base, err := baseFactory().make(symElem, SymbolType, NoTag, symbolSerializer)
 	if err != nil {
 		return nil, err
 	}

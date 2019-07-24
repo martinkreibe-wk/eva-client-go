@@ -25,9 +25,7 @@ var _ = Describe("Boolean in EDN", func() {
 	Context("", func() {
 
 		It("should create elements from the factory", func() {
-			lexer, err := newLexer()
-			Ω(err).Should(BeNil())
-			fact, has := lexer.GetFactory(BooleanType, NoTag)
+			fact, has := DefaultLexer.GetFactory(BooleanType, NoTag)
 			Ω(has).Should(BeTrue())
 			elem, err := fact(true)
 			Ω(err).Should(BeNil())
@@ -36,9 +34,7 @@ var _ = Describe("Boolean in EDN", func() {
 		})
 
 		It("should not create elements from the factory if the input is not a the right type", func() {
-			lexer, err := newLexer()
-			Ω(err).Should(BeNil())
-			fact, has := lexer.GetFactory(BooleanType, NoTag)
+			fact, has := DefaultLexer.GetFactory(BooleanType, NoTag)
 			Ω(has).Should(BeTrue())
 			elem, err := fact("true")
 			Ω(err).ShouldNot(BeNil())

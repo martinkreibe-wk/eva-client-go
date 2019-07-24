@@ -65,5 +65,5 @@ func int64Serializer(serializer Serializer, tag string, value interface{}) (stri
 
 // NewIntegerElement creates a new integer element or an error.
 func NewIntegerElement(value int64) (Element, error) {
-	return baseFactory().make(value, IntegerType, int64Serializer)
+	return baseFactory().make(value, IntegerType, NoTag, int64Serializer)
 }

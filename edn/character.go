@@ -108,5 +108,5 @@ func charSerializer(serializer Serializer, tag string, value interface{}) (strin
 
 // NewCharacterElement creates a new character element or an error.
 func NewCharacterElement(value rune) (Element, error) {
-	return baseFactory().make(value, CharacterType, charSerializer)
+	return baseFactory().make(value, CharacterType, NoTag, charSerializer)
 }

@@ -89,10 +89,8 @@ func runScanner(scanner *lexmachine.Scanner) (tokType tokenType, elems []Element
 }
 
 type lexerImpl struct {
-	primitives         map[PrimitiveType][]*primitiveDef
-	collectionPatterns map[string]*collProcDef
-	factories          map[ElementType]map[string]ElementTypeFactory
-	lex                *lexmachine.Lexer
+	factories map[ElementType]map[string]ElementTypeFactory
+	lex       *lexmachine.Lexer
 }
 
 type collProcDef struct {
@@ -101,62 +99,109 @@ type collProcDef struct {
 	processor CollectionProcessor
 }
 
+type primitiveDef struct {
+	processor PrimitiveProcessor
+	pattern   string
+	tag       string
+}
+
+var DefaultLexer = &lexerImpl{}
+
 // newLexer will create a new lexer.
-func newLexer() (Lexer, error) {
-	lexer := &lexerImpl{
-		primitives:         make(map[PrimitiveType][]*primitiveDef),
-		collectionPatterns: make(map[string]*collProcDef),
-		factories:          make(map[ElementType]map[string]ElementTypeFactory),
+func (lexer *lexerImpl) init() error {
+
+	if lexer.lex != nil {
+		return nil
 	}
 
-	err := lexer.AddPrimitiveFactory(LiteralPrimitive, NilType, NoTag, fromNil, parseNil, "nil")
-	if err != nil {
-		return nil, err
+	primitives := map[PrimitiveType][]*primitiveDef{
+		LiteralPrimitive: {
+			{
+				processor: parseNil,
+				pattern:   "nil",
+			},
+			{
+				processor: parseBoolElem,
+				pattern:   "(true|false)",
+			},
+		},
+		CharacterPrimitive: {
+			{
+				processor: parseCharElem,
+				pattern:   `\\([A-Z0-9a-mo-qv-z]|n(ewline)?|r(eturn)?|s(pace)?|t(ab)?|u([0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f])?)`,
+			},
+		},
+		SymbolPrimitive: {
+			{
+				processor: parseSymbol,
+				pattern:   "[*!?$%&=<>_a-zA-Z.]([-+*!?$%&=<>_.#]|\\w)*(/([-+*!?$%&=<>_.#]|\\w)*)?",
+			},
+			{
+				processor: parseKeyword,
+				pattern:   ":([*!?$%&=<>]|\\w)([-+*!?$%&=<>.#]|\\w)*(/([-+*!?$%&=<>.#]|\\w)*)?",
+			},
+		},
+		IntegerPrimitive: {
+			{
+				processor: parseInt64Elem,
+				pattern:   int64Regex,
+			},
+		},
+		FloatPrimitive: {
+			{
+				processor: parseFloatElem,
+				pattern:   "[-+]?(0|[1-9][0-9]*)(\\.[0-9]*)?([eE][-+]?[0-9]+)?M?",
+			},
+		},
+		StringPrimitive: {
+			{
+				processor: parseString,
+				pattern:   StringPattern,
+			},
+			{
+				processor: instStringProcessor,
+				pattern:   InstPattern,
+				tag:       InstantElementTag,
+			},
+			{
+				processor: uuidStringProcessor,
+				pattern:   UUIDPattern,
+				tag:       UUIDElementTag,
+			},
+		},
 	}
 
-	err = lexer.AddPrimitiveFactory(LiteralPrimitive, BooleanType, NoTag, fromBool, parseBoolElem, "true", "false")
-	if err != nil {
-		return nil, err
-	}
-
-	err = lexer.AddPrimitiveFactory(StringPrimitive, StringType, NoTag, stringFactory, parseString, StringPattern)
-	if err != nil {
-		return nil, err
-	}
-
-	err = lexer.AddPrimitiveFactory(CharacterPrimitive, CharacterType, NoTag, fromChar, parseCharElem, `\\([A-Z0-9a-mo-qv-z]|n(ewline)?|r(eturn)?|s(pace)?|t(ab)?|u([0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f])?)`)
-	if err != nil {
-		return nil, err
-	}
-
-	err = lexer.AddPrimitiveFactory(SymbolPrimitive, SymbolType, NoTag, fromSymbol, parseSymbol, "[*!?$%&=<>_a-zA-Z.]([-+*!?$%&=<>_.#]|\\w)*(/([-+*!?$%&=<>_.#]|\\w)*)?")
-	if err != nil {
-		return nil, err
-	}
-
-	err = lexer.AddPrimitiveFactory(SymbolPrimitive, KeywordType, NoTag, fromKeyword, parseKeyword, ":([*!?$%&=<>]|\\w)([-+*!?$%&=<>.#]|\\w)*(/([-+*!?$%&=<>.#]|\\w)*)?")
-	if err != nil {
-		return nil, err
-	}
-
-	err = lexer.AddPrimitiveFactory(IntegerPrimitive, IntegerType, NoTag, fromInt64, parseInt64Elem, int64Regex)
-	if err != nil {
-		return nil, err
-	}
-
-	err = lexer.AddPrimitiveFactory(FloatPrimitive, FloatType, NoTag, fromFloat, parseFloatElem, "[-+]?(0|[1-9][0-9]*)(\\.[0-9]*)?([eE][-+]?[0-9]+)?M?")
-	if err != nil {
-		return nil, err
-	}
-
-	err = lexer.AddPrimitiveFactory(StringPrimitive, InstantType, InstantElementTag, instantFactory, instStringProcessor, InstPattern)
-	if err != nil {
-		return nil, err
-	}
-
-	err = lexer.AddPrimitiveFactory(StringPrimitive, UUIDType, UUIDElementTag, uuidFactory, uuidStringProcessor, UUIDPattern)
-	if err != nil {
-		return nil, err
+	lexer.factories = map[ElementType]map[string]ElementTypeFactory{
+		NilType: {
+			NoTag: fromNil,
+		},
+		BooleanType: {
+			NoTag: fromBool,
+		},
+		StringType: {
+			NoTag: stringFactory,
+		},
+		CharacterType: {
+			NoTag: fromChar,
+		},
+		SymbolType: {
+			NoTag: fromSymbol,
+		},
+		KeywordType: {
+			NoTag: fromKeyword,
+		},
+		IntegerType: {
+			NoTag: fromInt64,
+		},
+		FloatType: {
+			NoTag: fromFloat,
+		},
+		InstantType: {
+			InstantElementTag: instantFactory,
+		},
+		UUIDType: {
+			UUIDElementTag: uuidFactory,
+		},
 	}
 
 	/////
@@ -172,45 +217,53 @@ func newLexer() (Lexer, error) {
 
 	/////
 
-	lexer.AddCollectionPattern(ListStartLiteral, ListEndLiteral, func(elements []Element) (el CollectionElement, e error) {
-		return NewList(elements...)
-	})
+	collectionPatterns := map[string]*collProcDef{
+		ListStartLiteral + ListEndLiteral: {
+			start:     ListStartLiteral,
+			end:       ListEndLiteral,
+			processor: NewList,
+		},
 
-	lexer.AddCollectionPattern(VectorStartLiteral, VectorEndLiteral, func(elements []Element) (el CollectionElement, e error) {
-		return NewVector(elements...)
-	})
+		VectorStartLiteral + VectorEndLiteral: {
+			start:     VectorStartLiteral,
+			end:       VectorEndLiteral,
+			processor: NewVector,
+		},
 
-	makePairs := func(elements []Element) (pairs Pairs, err error) {
+		SetStartLiteral + SetEndLiteral: {
+			start:     SetStartLiteral,
+			end:       SetEndLiteral,
+			processor: NewSet,
+		},
 
-		if l := len(elements); l%2 == 0 {
-			for i := 0; i < l; i = i + 2 {
-				if err = pairs.Append(elements[i], elements[i+1]); err != nil {
-					return Pairs{}, err
+		MapStartLiteral + MapEndLiteral: {
+			start: MapStartLiteral,
+			end:   MapEndLiteral,
+			processor: func(elements ...Element) (CollectionElement, error) {
+				var pairs Pairs
+
+				l := len(elements)
+				if l%2 != 0 {
+					return nil, MakeError(ErrInvalidPair, "Map input are not paired up.")
 				}
-			}
-		} else {
-			err = MakeError(ErrInvalidPair, "Map input are not paired up.")
-		}
 
-		return pairs, err
+				for i := 0; i < l; i = i + 2 {
+					if err := pairs.Append(elements[i], elements[i+1]); err != nil {
+						return nil, err
+					}
+				}
+
+				return NewMap(pairs.Raw()...)
+			},
+		},
 	}
-
-	lexer.AddCollectionPattern(MapStartLiteral, MapEndLiteral, func(elements []Element) (el CollectionElement, e error) {
-		var pairs Pairs
-		if pairs, e = makePairs(elements); e != nil {
-			return nil, e
-		}
-		return NewMap(pairs.Raw()...)
-	})
-
-	lexer.AddCollectionPattern(SetStartLiteral, SetEndLiteral, func(elements []Element) (el CollectionElement, e error) {
-		return NewSet(elements...)
-	})
 
 	lex := lexmachine.NewLexer()
 
+	//	for i := lastPrimitivePriority; i >= PrimitiveType(0); i-- {
+
 	for i := PrimitiveType(0); i < lastPrimitivePriority; i++ {
-		if defs, has := lexer.primitives[i]; has {
+		if defs, has := primitives[i]; has {
 
 			var orderedDefs []*primitiveDef
 			var last []*primitiveDef
@@ -228,32 +281,30 @@ func newLexer() (Lexer, error) {
 			}
 
 			for _, def := range orderedDefs {
-				for _, pattern := range def.patterns {
-					proc := def.processor
+				proc := def.processor
 
-					var realPattern []byte
-					if len(def.tag) == 0 {
-						realPattern = buildTagPattern(pattern, true)
-					} else {
-						realPattern = []byte(fmt.Sprintf("%s%s(\\s)+%s", TagPrefix, def.tag, pattern))
+				var realPattern []byte
+				if len(def.tag) == 0 {
+					realPattern = buildTagPattern(def.pattern, true)
+				} else {
+					realPattern = []byte(fmt.Sprintf("%s%s(\\s)+%s", TagPrefix, def.tag, def.pattern))
+				}
+
+				lex.Add(realPattern, func(scan *lexmachine.Scanner, match *machines.Match) (interface{}, error) {
+					tag, value := splitTag(match.Bytes, "")
+
+					elem, err := proc(value)
+					if err != nil {
+						return nil, err
 					}
 
-					lex.Add(realPattern, func(scan *lexmachine.Scanner, match *machines.Match) (interface{}, error) {
-						tag, value := splitTag(match.Bytes, "")
+					err = elem.SetTag(tag)
+					if err != nil {
+						return nil, err
+					}
 
-						elem, err := proc(value)
-						if err != nil {
-							return nil, err
-						}
-
-						err = elem.SetTag(tag)
-						if err != nil {
-							return nil, err
-						}
-
-						return elem, nil
-					})
-				}
+					return elem, nil
+				})
 			}
 		}
 	}
@@ -264,64 +315,62 @@ func newLexer() (Lexer, error) {
 		"\\", "[", "]", "{", "}", "(", ")",
 	}
 
-	if lexer.collectionPatterns != nil {
-		for _, def := range lexer.collectionPatterns {
-			processor := def.processor // and again boo - golang oddities! :(
-			end := def.end
-			start := def.start
+	for _, def := range collectionPatterns {
+		processor := def.processor // and again boo - golang oddities! :(
+		end := def.end
+		start := def.start
 
-			for _, c := range lexSpecialChars {
-				start = strings.Replace(start, c, "\\"+c, -1)
-				end = strings.Replace(end, c, "\\"+c, -1)
-			}
-
-			startRaw := def.start
-
-			if _, has := endPatterns[end]; !has {
-				lex.Add([]byte(end), func(scan *lexmachine.Scanner, match *machines.Match) (interface{}, error) {
-					return tokenType(end), nil
-				})
-				endPatterns[end] = true
-			}
-
-			// Add the non tagged items.
-			lex.Add(buildTagPattern(start, false), func(scan *lexmachine.Scanner, match *machines.Match) (v interface{}, e error) {
-				tag, _ := splitTag(match.Bytes, startRaw)
-
-				var tt tokenType
-				var children []Element
-				var c []Element
-
-				for tt, c, e = runScanner(scan); ; tt, c, e = runScanner(scan) {
-					stop := true
-					if e == nil {
-						children = append(children, c...)
-						switch {
-						case tt == elementToken:
-							stop = false
-						case tt.Is(end):
-						default:
-							e = MakeErrorWithFormat(ErrParserError, "Unexpected end token: '%s' instead of '%s'", tt.String(), end)
-						}
-					}
-
-					if stop {
-						break
-					}
-				}
-
-				var el CollectionElement
-				if e == nil {
-					el, e = processor(children)
-				}
-
-				if e == nil {
-					e = el.SetTag(tag)
-				}
-
-				return el, e
-			})
+		for _, c := range lexSpecialChars {
+			start = strings.Replace(start, c, "\\"+c, -1)
+			end = strings.Replace(end, c, "\\"+c, -1)
 		}
+
+		startRaw := def.start
+
+		if _, has := endPatterns[end]; !has {
+			lex.Add([]byte(end), func(scan *lexmachine.Scanner, match *machines.Match) (interface{}, error) {
+				return tokenType(end), nil
+			})
+			endPatterns[end] = true
+		}
+
+		// Add the non tagged items.
+		lex.Add(buildTagPattern(start, false), func(scan *lexmachine.Scanner, match *machines.Match) (v interface{}, e error) {
+			tag, _ := splitTag(match.Bytes, startRaw)
+
+			var tt tokenType
+			var children []Element
+			var c []Element
+
+			for tt, c, e = runScanner(scan); ; tt, c, e = runScanner(scan) {
+				stop := true
+				if e == nil {
+					children = append(children, c...)
+					switch {
+					case tt == elementToken:
+						stop = false
+					case tt.Is(end):
+					default:
+						e = MakeErrorWithFormat(ErrParserError, "Unexpected end token: '%s' instead of '%s'", tt.String(), end)
+					}
+				}
+
+				if stop {
+					break
+				}
+			}
+
+			var el CollectionElement
+			if e == nil {
+				el, e = processor(children...)
+			}
+
+			if e == nil {
+				e = el.SetTag(tag)
+			}
+
+			return el, e
+		})
 	}
 
 	lex.Add([]byte("(\\s|,)+"), func(scan *lexmachine.Scanner, match *machines.Match) (interface{}, error) {
@@ -333,24 +382,30 @@ func newLexer() (Lexer, error) {
 	})
 
 	if err := lex.CompileNFA(); err != nil {
-		return nil, err
+		return err
 	}
 
 	lexer.lex = lex
 
-	return lexer, nil
+	return nil
 }
 
 // Parse the value
-func (lexer *lexerImpl) Parse(data io.Reader) (_ Element, err error) {
+func (lexer *lexerImpl) Parse(data io.Reader) (Element, error) {
 
 	if data == nil {
 		return nil, MakeErrorWithFormat(ErrParserError, "parse input was nil")
 	}
 
+	var err error
+
 	var bytes []byte
 	if bytes, err = ioutil.ReadAll(data); err != nil {
 		return nil, MakeErrorWithFormat(ErrParserError, "parse input error: %s", err.Error())
+	}
+
+	if err = lexer.init(); err != nil {
+		return nil, err
 	}
 
 	var scanner *lexmachine.Scanner
@@ -372,6 +427,8 @@ func (lexer *lexerImpl) Parse(data io.Reader) (_ Element, err error) {
 }
 
 func (lexer *lexerImpl) GetFactory(elementType ElementType, tag string) (ElementTypeFactory, bool) {
+	lexer.init()
+
 	if lexer.factories == nil {
 		return nil, false
 	}
@@ -385,6 +442,8 @@ func (lexer *lexerImpl) GetFactory(elementType ElementType, tag string) (Element
 }
 
 func (lexer *lexerImpl) RemoveFactory(elementType ElementType, tag string) {
+	lexer.init()
+
 	if lexer.factories == nil {
 		return
 	}
@@ -396,47 +455,6 @@ func (lexer *lexerImpl) RemoveFactory(elementType ElementType, tag string) {
 
 		if len(lexer.factories[elementType]) == 0 {
 			delete(lexer.factories, elementType)
-		}
-	}
-}
-
-type primitiveDef struct {
-	processor PrimitiveProcessor
-	patterns  []string
-	tag       string
-}
-
-// AddPattern will add a pattern to the lexer
-func (lexer *lexerImpl) AddPrimitiveFactory(priority PrimitiveType, elemType ElementType, tag string, elemFactory ElementTypeFactory, processor PrimitiveProcessor, patterns ...string) error {
-
-	lexer.primitives[priority] = append(lexer.primitives[priority], &primitiveDef{
-		processor: processor,
-		patterns:  patterns,
-		tag:       tag,
-	})
-
-	if _, has := lexer.factories[elemType]; !has {
-		lexer.factories[elemType] = make(map[string]ElementTypeFactory)
-	}
-
-	if _, has := lexer.factories[elemType][tag]; has {
-		return MakeErrorWithFormat(ErrInvalidFactory, "duplicate: `%s`:`%s`", elemType, tag)
-	}
-
-	lexer.factories[elemType][tag] = elemFactory
-
-	return nil
-}
-
-// AddCollectionPattern will add the collection pattern to this one.
-func (lexer *lexerImpl) AddCollectionPattern(start string, end string, processor CollectionProcessor) {
-
-	pattern := start + end
-	if _, has := lexer.collectionPatterns[pattern]; !has {
-		lexer.collectionPatterns[pattern] = &collProcDef{
-			start:     start,
-			end:       end,
-			processor: processor,
 		}
 	}
 }

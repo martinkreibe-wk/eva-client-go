@@ -25,13 +25,15 @@ import (
 	"time"
 )
 
+const tag = NoTag
+
 var _ = Describe("Elements in EDN", func() {
 	Context("with the default marshaller", func() {
 		It("should create an base element with no error", func() {
 
 			t := ElementType(99)
 
-			elem, err := baseFactory().make(nil, t, func(serializer Serializer, tag string, i interface{}) (string, error) {
+			elem, err := baseFactory().make(nil, t, tag, func(serializer Serializer, tag string, i interface{}) (string, error) {
 				return "", nil
 			})
 			Ω(err).Should(BeNil())
@@ -43,7 +45,7 @@ var _ = Describe("Elements in EDN", func() {
 
 			t := ElementType(99)
 
-			elem, err := baseFactory().make(nil, t, nil)
+			elem, err := baseFactory().make(nil, t, tag, nil)
 			Ω(err).ShouldNot(BeNil())
 			Ω(elem).Should(BeNil())
 			Ω(err).Should(test.HaveMessage(ErrInvalidElement))
@@ -53,7 +55,7 @@ var _ = Describe("Elements in EDN", func() {
 
 			value := "42"
 
-			elem, err := baseFactory().make(value, StringType, func(serializer Serializer, tag string, value interface{}) (out string, e error) {
+			elem, err := baseFactory().make(value, StringType, tag, func(serializer Serializer, tag string, value interface{}) (out string, e error) {
 				out = strconv.Quote(value.(string))
 				return out, e
 			})
@@ -61,7 +63,7 @@ var _ = Describe("Elements in EDN", func() {
 			Ω(elem).ShouldNot(BeNil())
 			Ω(elem.Value()).Should(BeEquivalentTo(value))
 
-			elem2, err := baseFactory().make(value, StringType, func(serializer Serializer, tag string, value interface{}) (out string, e error) {
+			elem2, err := baseFactory().make(value, StringType, tag, func(serializer Serializer, tag string, value interface{}) (out string, e error) {
 				out = strconv.Quote(value.(string))
 				return out, e
 			})
@@ -76,7 +78,7 @@ var _ = Describe("Elements in EDN", func() {
 
 			value := "42"
 
-			elem, err := baseFactory().make(value, StringType, func(serializer Serializer, tag string, value interface{}) (out string, e error) {
+			elem, err := baseFactory().make(value, StringType, tag, func(serializer Serializer, tag string, value interface{}) (out string, e error) {
 				out = strconv.Quote(value.(string))
 				return out, e
 			})
@@ -107,7 +109,7 @@ var _ = Describe("Elements in EDN", func() {
 
 			t := ElementType(99)
 
-			elem, err := baseFactory().make(nil, t, func(serializer Serializer, tag string, i interface{}) (string, error) {
+			elem, err := baseFactory().make(nil, t, tag, func(serializer Serializer, tag string, i interface{}) (string, error) {
 				return "", errors.New("expected")
 
 			})
@@ -211,10 +213,11 @@ var _ = Describe("Elements in EDN", func() {
 			id := uuid.RandomUUID()
 			Ω(IsPrimitive(id)).Should(BeTrue())
 
-			lexer, err := newLexer()
+			lexer := &lexerImpl{}
+			err := lexer.init()
 			Ω(err).Should(BeNil())
 
-			lexer.(*lexerImpl).RemoveFactory(UUIDType, UUIDElementTag)
+			lexer.RemoveFactory(UUIDType, UUIDElementTag)
 
 			elem, err := NewPrimitiveElementWithLexer(lexer, id)
 			Ω(err).ShouldNot(BeNil())

@@ -59,5 +59,5 @@ func floatSerialize(serializer Serializer, tag string, value interface{}) (strin
 
 // NewFloatElement creates a new float point element or an error.
 func NewFloatElement(value float64) (Element, error) {
-	return baseFactory().make(value, FloatType, floatSerialize)
+	return baseFactory().make(value, FloatType, NoTag, floatSerialize)
 }

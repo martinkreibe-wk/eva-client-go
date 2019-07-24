@@ -33,7 +33,7 @@ var baseFactory = func() elementFactory {
 
 // TODO: make the maker a factory
 type elementFactory interface {
-	make(value interface{}, elementType ElementType, stringer stringerFunc) (elem *baseElemImpl, err error)
+	make(value interface{}, elementType ElementType, tag string, stringer stringerFunc) (elem *baseElemImpl, err error)
 	makeEquality() (func(left, right Element) (result bool), error)
 }
 
@@ -44,7 +44,7 @@ func (builder *defaultBuilder) makeEquality() (func(left, right Element) (result
 }
 
 // makeBaseElement creates the base element.
-func (builder *defaultBuilder) make(value interface{}, elementType ElementType, stringer stringerFunc) (elem *baseElemImpl, err error) {
+func (builder *defaultBuilder) make(value interface{}, elementType ElementType, tag string, stringer stringerFunc) (elem *baseElemImpl, err error) {
 
 	if stringer != nil {
 
@@ -55,6 +55,7 @@ func (builder *defaultBuilder) make(value interface{}, elementType ElementType, 
 				value:    value,
 				stringer: stringer,
 				equality: equality,
+				tag:      tag,
 			}
 		}
 	} else {

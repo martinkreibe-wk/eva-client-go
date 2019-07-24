@@ -42,5 +42,5 @@ func nilSerializer(serializer Serializer, tag string, _ interface{}) (out string
 
 // NewNilElement returns the nil element or an error.
 func NewNilElement() (Element, error) {
-	return baseFactory().make(nil, NilType, nilSerializer)
+	return baseFactory().make(nil, NilType, NoTag, nilSerializer)
 }

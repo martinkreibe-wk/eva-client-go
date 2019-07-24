@@ -36,55 +36,35 @@ func (r *badReader) Read(p []byte) (n int, err error) {
 
 var _ = Describe("Lexer tests", func() {
 	It("should error with a nil reader with a parse error", func() {
-		lexer, err := newLexer()
-		Ω(err).Should(BeNil())
-
-		var elem Element
-		elem, err = lexer.Parse(nil)
+		elem, err := DefaultLexer.Parse(nil)
 		Ω(err).ShouldNot(BeNil())
 		Ω(elem).Should(BeNil())
 		Ω(err).Should(test.HaveMessage(ErrParserError))
 	})
 
 	It("should error with a bad reader with a parse error", func() {
-		lexer, err := newLexer()
-		Ω(err).Should(BeNil())
-
-		var elem Element
-		elem, err = lexer.Parse(&badReader{})
+		elem, err := DefaultLexer.Parse(&badReader{})
 		Ω(err).ShouldNot(BeNil())
 		Ω(elem).Should(BeNil())
 		Ω(err).Should(test.HaveMessage(ErrParserError))
 	})
 
 	It("should error with a empty string with a parse error", func() {
-		lexer, err := newLexer()
-		Ω(err).Should(BeNil())
-
-		var elem Element
-		elem, err = lexer.Parse(strings.NewReader(""))
+		elem, err := DefaultLexer.Parse(strings.NewReader(""))
 		Ω(err).ShouldNot(BeNil())
 		Ω(elem).Should(BeNil())
 		Ω(err).Should(test.HaveMessage(ErrParserError))
 	})
 
 	It("should error with a comment only string with a parse error", func() {
-		lexer, err := newLexer()
-		Ω(err).Should(BeNil())
-
-		var elem Element
-		elem, err = lexer.Parse(strings.NewReader(";this comment."))
+		elem, err := DefaultLexer.Parse(strings.NewReader(";this comment."))
 		Ω(err).ShouldNot(BeNil())
 		Ω(elem).Should(BeNil())
 		Ω(err).Should(test.HaveMessage(ErrParserError))
 	})
 
 	It("should error with a open collection string with a parse error", func() {
-		lexer, err := newLexer()
-		Ω(err).Should(BeNil())
-
-		var elem Element
-		elem, err = lexer.Parse(strings.NewReader("[ Foo"))
+		elem, err := DefaultLexer.Parse(strings.NewReader("[ Foo"))
 		Ω(err).ShouldNot(BeNil())
 		Ω(elem).Should(BeNil())
 		Ω(err).Should(test.HaveMessage(ErrParserError))
@@ -102,11 +82,7 @@ var _ = Describe("Lexer tests", func() {
 	})
 
 	It("should error with a open collection, in a collection string with a parse error", func() {
-		lexer, err := newLexer()
-		Ω(err).Should(BeNil())
-
-		var elem Element
-		elem, err = lexer.Parse(strings.NewReader("[ { :Foo  :bar ]"))
+		elem, err := DefaultLexer.Parse(strings.NewReader("[ { :Foo  :bar ]"))
 		Ω(err).ShouldNot(BeNil())
 		Ω(elem).Should(BeNil())
 		Ω(err).Should(test.HaveMessage(ErrParserError))

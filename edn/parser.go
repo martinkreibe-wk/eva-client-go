@@ -35,13 +35,7 @@ func ParseCollectionString(data string) (elem CollectionElement, err error) {
 
 // Parse the string into an edn element.
 func Parse(data io.Reader) (Element, error) {
-
-	lex, err := newLexer()
-	if err != nil {
-		return nil, err
-	}
-
-	return lex.Parse(data)
+	return DefaultLexer.Parse(data)
 }
 
 // ParseCollection will parse a collection.

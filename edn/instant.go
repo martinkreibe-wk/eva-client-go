@@ -65,15 +65,5 @@ func instantSerializer(serializer Serializer, tag string, value interface{}) (st
 
 // NewInstantElement creates a new instant element or an error.
 func NewInstantElement(value time.Time) (Element, error) {
-
-	elem, err := baseFactory().make(value, InstantType, instantSerializer)
-	if err != nil {
-		return nil, err
-	}
-
-	if err = elem.SetTag(InstantElementTag); err != nil {
-		return nil, err
-	}
-
-	return elem, err
+	return baseFactory().make(value, InstantType, InstantElementTag, instantSerializer)
 }

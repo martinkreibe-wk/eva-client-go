@@ -77,16 +77,5 @@ func uuidSerializer(serializer Serializer, tag string, value interface{}) (strin
 
 // NewInstantElement creates a new instant element or an error.
 func NewUUIDElement(value uuid.UUID) (Element, error) {
-
-	elem, err := baseFactory().make(value, UUIDType, uuidSerializer)
-	if err != nil {
-		return nil, err
-	}
-
-	err = elem.SetTag(UUIDElementTag)
-	if err != nil {
-		return nil, err
-	}
-
-	return elem, nil
+	return baseFactory().make(value, UUIDType, UUIDElementTag, uuidSerializer)
 }
