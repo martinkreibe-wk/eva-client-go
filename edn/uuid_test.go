@@ -29,15 +29,14 @@ var _ = Describe("UUID in EDN", func() {
 			lexer, err := newLexer()
 			Ω(err).Should(BeNil())
 
-			delete(typeFactories, UUIDType)
+			lexer.RemoveFactory(UUIDType, UUIDElementTag)
 			err = initUUID(lexer)
 			Ω(err).Should(BeNil())
-			_, has := typeFactories[UUIDType]
+			_, has := lexer.GetFactory(UUIDType, UUIDElementTag)
 			Ω(has).Should(BeTrue())
 
 			err = initUUID(lexer)
 			Ω(err).ShouldNot(BeNil())
-			Ω(err).Should(test.HaveMessage(ErrInvalidFactory))
 		})
 
 		It("should create elements from the factory", func() {
@@ -45,7 +44,11 @@ var _ = Describe("UUID in EDN", func() {
 			v, err := uuid.ParseUUID(uuidValue)
 			Ω(err).Should(BeNil())
 
-			elem, err := typeFactories[UUIDType](v)
+			lexer, err := newLexer()
+			Ω(err).Should(BeNil())
+			fact, has := lexer.GetFactory(UUIDType, UUIDElementTag)
+			Ω(has).Should(BeTrue())
+			elem, err := fact(v)
 			Ω(err).Should(BeNil())
 			Ω(elem.ElementType()).Should(BeEquivalentTo(UUIDType))
 			Ω(elem.Value()).Should(BeEquivalentTo(v))
@@ -54,9 +57,13 @@ var _ = Describe("UUID in EDN", func() {
 		It("should not create elements from the factory if the input is not a the right type", func() {
 			v := "foo"
 
-			elem, err := typeFactories[UUIDType](v)
+			lexer, err := newLexer()
+			Ω(err).Should(BeNil())
+			fact, has := lexer.GetFactory(UUIDType, UUIDElementTag)
+			Ω(has).Should(BeTrue())
+			elem, err := fact(v)
 			Ω(err).ShouldNot(BeNil())
-			Ω(err).Should(test.HaveMessage(ErrInvalidInput))
+			Ω(err).Should(test.HaveMessage(ErrParserError))
 			Ω(elem).Should(BeNil())
 		})
 	})

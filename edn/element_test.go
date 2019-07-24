@@ -210,15 +210,16 @@ var _ = Describe("Elements in EDN", func() {
 		It("should create an base element with no error", func() {
 			id := uuid.RandomUUID()
 			Ω(IsPrimitive(id)).Should(BeTrue())
-			fac := typeFactories[UUIDType]
-			delete(typeFactories, UUIDType)
 
-			elem, err := NewPrimitiveElement(id)
+			lexer, err := newLexer()
+			Ω(err).Should(BeNil())
+
+			lexer.RemoveFactory(UUIDType, UUIDElementTag)
+
+			elem, err := NewPrimitiveElementWithLexer(lexer, id)
 			Ω(err).ShouldNot(BeNil())
 			Ω(elem).Should(BeNil())
 			Ω(err).Should(test.HaveMessage(ErrInvalidElement))
-
-			typeFactories[UUIDType] = fac
 		})
 
 		It("should create an base element with no error", func() {

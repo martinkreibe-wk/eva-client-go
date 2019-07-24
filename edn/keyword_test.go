@@ -27,10 +27,10 @@ var _ = Describe("Keyword in EDN", func() {
 			lexer, err := newLexer()
 			Ω(err).Should(BeNil())
 
-			delete(typeFactories, KeywordType)
+			lexer.RemoveFactory(KeywordType, NoTag)
 			err = initKeyword(lexer)
 			Ω(err).Should(BeNil())
-			_, has := typeFactories[KeywordType]
+			_, has := lexer.GetFactory(KeywordType, NoTag)
 			Ω(has).Should(BeTrue())
 
 			err = initKeyword(lexer)
@@ -41,7 +41,11 @@ var _ = Describe("Keyword in EDN", func() {
 		It("should create elements from the factory", func() {
 			v := "testKeyword"
 
-			elem, err := typeFactories[KeywordType](v)
+			lexer, err := newLexer()
+			Ω(err).Should(BeNil())
+			fact, has := lexer.GetFactory(KeywordType, NoTag)
+			Ω(has).Should(BeTrue())
+			elem, err := fact(v)
 			Ω(err).Should(BeNil())
 			Ω(elem.ElementType()).Should(BeEquivalentTo(KeywordType))
 
@@ -53,7 +57,11 @@ var _ = Describe("Keyword in EDN", func() {
 		It("should not create elements from the factory if the input is not a the right type", func() {
 			v := 123
 
-			elem, err := typeFactories[KeywordType](v)
+			lexer, err := newLexer()
+			Ω(err).Should(BeNil())
+			fact, has := lexer.GetFactory(KeywordType, NoTag)
+			Ω(has).Should(BeTrue())
+			elem, err := fact(v)
 			Ω(err).ShouldNot(BeNil())
 			Ω(err).Should(test.HaveMessage(ErrInvalidInput))
 			Ω(elem).Should(BeNil())

@@ -35,7 +35,7 @@ func fromInt64(input interface{}) (Element, error) {
 }
 
 // parseInt64Elem parses the string into a int64 Element
-func parseInt64Elem(tag string, tokenValue string) (Element, error) {
+func parseInt64Elem(tokenValue string) (Element, error) {
 
 	if strings.HasSuffix(tokenValue, "N") {
 		tokenValue = strings.TrimSuffix(tokenValue, "N")
@@ -46,16 +46,7 @@ func parseInt64Elem(tag string, tokenValue string) (Element, error) {
 		return nil, err
 	}
 
-	elem, err := NewIntegerElement(v)
-	if err != nil {
-		return nil, err
-	}
-
-	if err = elem.SetTag(tag); err != nil {
-		return nil, err
-	}
-
-	return elem, nil
+	return NewIntegerElement(v)
 }
 
 // int64Serializer takes the input value and serialize it.
@@ -74,12 +65,7 @@ func int64Serializer(serializer Serializer, tag string, value interface{}) (stri
 
 // initInteger will add the element factory to the collection of factories
 func initInteger(lexer Lexer) error {
-	if err := addElementTypeFactory(IntegerType, fromInt64); err != nil {
-		return err
-	}
-	lexer.AddPattern(IntegerPrimitive, int64Regex, parseInt64Elem)
-
-	return nil
+	return lexer.AddPrimitiveFactory(IntegerPrimitive, IntegerType, NoTag, fromInt64, parseInt64Elem, int64Regex)
 }
 
 // NewIntegerElement creates a new integer element or an error.

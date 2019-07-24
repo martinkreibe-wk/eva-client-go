@@ -17,9 +17,6 @@ package edn
 // ElementType indicates the EDN element construct
 type ElementType string
 
-// ElementTypeFactory defines the factory for an element.
-type ElementTypeFactory func(interface{}) (Element, error)
-
 const (
 
 	// typeNamespace hold the type namespace
@@ -96,93 +93,21 @@ const (
 
 	// ErrInvalidInput defines the input error
 	ErrInvalidInput = ErrorMessage("Invalid input")
+
+	// NoTag defines the value for no tag value.
+	NoTag = ""
 )
 
-// typeFactories hold the collection of element factories.
-var typeFactories = map[ElementType]ElementTypeFactory{}
-
-type elementDefinition struct {
-	elemType    ElementType
-	initializer func(lexer Lexer) error
-}
-
-var unknownTypeDef = &elementDefinition{UnknownType, nil}
-
-// typeDefinitions holds the type to name/initializer mappings
-// NOTE: ORDER MATTERS!!
-var typeDefinitions = []*elementDefinition{
-	unknownTypeDef,
-	{NilType, initNil},
-	{BooleanType, initBoolean},
-	{StringType, initString},
-	{CharacterType, initCharacter},
-	{SymbolType, initSymbol},
-	{KeywordType, initKeyword},
-	{IntegerType, initInteger},
-	{FloatType, initFloat},
-	{InstantType, initInstant},
-	{UUIDType, initUUID},
-	{ListType, initList},
-	{VectorType, initVector},
-	{MapType, initMap},
-	{SetType, initSet},
-
-	// TODO
-	{URIType, nil},
-	{BytesType, nil},
-	{BigIntType, nil},
-	{BigDecType, nil},
-	{DoubleType, nil},
-	{RefType, nil},
-}
-
-// init will initialize the package - NOTE this is not testable
-func init() {
-	initAll()
-}
-
-// addElementTypeFactory adds an element factory to the factory collection.
-func addElementTypeFactory(elemType ElementType, elemFactory ElementTypeFactory) (err error) {
-	if _, has := typeFactories[elemType]; !has {
-		typeFactories[elemType] = elemFactory
-	} else {
-		err = MakeError(ErrInvalidFactory, elemType)
-	}
-
-	return err
-}
-
-// init the package
-func initAll() {
-
-	var err error
-
-	var lexer Lexer
-	if lexer, err = getLexer(); err == nil {
-		for _, def := range typeDefinitions {
-			if def.initializer != nil {
-				if err = def.initializer(lexer); err != nil {
-					break
-				}
-			}
-		}
-	}
-
-	if err != nil {
-		panic(err)
-	}
-}
-
 // IsCollection indicates that this type is a collection
-func (t ElementType) IsCollection() (isColl bool) {
+func (t ElementType) IsCollection() bool {
 	switch t {
 	case ListType, VectorType, MapType, SetType:
-		isColl = true
+		return true
 	}
-	return isColl
+	return false
 }
 
 // Name returns the name of the set.
-func (t ElementType) Name() (name string) {
+func (t ElementType) Name() string {
 	return string(t)
 }

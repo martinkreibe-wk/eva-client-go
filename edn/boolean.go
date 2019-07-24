@@ -26,7 +26,7 @@ func fromBool(input interface{}) (Element, error) {
 }
 
 // parseBoolElem parses the string into a boolean Element
-func parseBoolElem(tag string, tokenValue string) (Element, error) {
+func parseBoolElem(tokenValue string) (Element, error) {
 
 	var val bool
 	switch tokenValue {
@@ -38,16 +38,7 @@ func parseBoolElem(tag string, tokenValue string) (Element, error) {
 		return nil, MakeErrorWithFormat(ErrParserError, "Unknown bool: `%s`", tokenValue)
 	}
 
-	elem, err := NewBooleanElement(val)
-	if err != nil {
-		return nil, err
-	}
-
-	if err = elem.SetTag(tag); err != nil {
-		return nil, err
-	}
-
-	return elem, nil
+	return NewBooleanElement(val)
 }
 
 // boolSerializer takes the input value and serialize it.
@@ -67,16 +58,7 @@ func boolSerializer(serializer Serializer, tag string, value interface{}) (strin
 
 // initBoolean will add the element factory to the collection of factories
 func initBoolean(lexer Lexer) error {
-	if err := addElementTypeFactory(BooleanType, fromBool); err != nil {
-		return err
-	}
-
-	// For some reason, I can not do `true|false` or any other variation without
-	// the symbol parser picking the bool up.
-	lexer.AddPattern(LiteralPrimitive, "true", parseBoolElem)
-	lexer.AddPattern(LiteralPrimitive, "false", parseBoolElem)
-
-	return nil
+	return lexer.AddPrimitiveFactory(LiteralPrimitive, BooleanType, NoTag, fromBool, parseBoolElem, "true", "false")
 }
 
 // NewBooleanElement creates a new boolean element or an error.

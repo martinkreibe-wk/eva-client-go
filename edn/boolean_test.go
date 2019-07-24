@@ -27,26 +27,30 @@ var _ = Describe("Boolean in EDN", func() {
 		It("should initialize without issue", func() {
 			lexer, err := newLexer()
 			Ω(err).Should(BeNil())
-			delete(typeFactories, BooleanType)
+			lexer.RemoveFactory(BooleanType, NoTag)
 			err = initBoolean(lexer)
 			Ω(err).Should(BeNil())
-			_, has := typeFactories[BooleanType]
+			_, has := lexer.GetFactory(BooleanType, NoTag)
 			Ω(has).Should(BeTrue())
-
-			err = initBoolean(lexer)
-			Ω(err).ShouldNot(BeNil())
-			Ω(err).Should(test.HaveMessage(ErrInvalidFactory))
 		})
 
 		It("should create elements from the factory", func() {
-			elem, err := typeFactories[BooleanType](true)
+			lexer, err := newLexer()
+			Ω(err).Should(BeNil())
+			fact, has := lexer.GetFactory(BooleanType, NoTag)
+			Ω(has).Should(BeTrue())
+			elem, err := fact(true)
 			Ω(err).Should(BeNil())
 			Ω(elem.ElementType()).Should(BeEquivalentTo(BooleanType))
 			Ω(elem.Value()).Should(BeTrue())
 		})
 
 		It("should not create elements from the factory if the input is not a the right type", func() {
-			elem, err := typeFactories[BooleanType]("true")
+			lexer, err := newLexer()
+			Ω(err).Should(BeNil())
+			fact, has := lexer.GetFactory(BooleanType, NoTag)
+			Ω(has).Should(BeTrue())
+			elem, err := fact("true")
 			Ω(err).ShouldNot(BeNil())
 			Ω(err).Should(test.HaveMessage(ErrInvalidInput))
 			Ω(elem).Should(BeNil())

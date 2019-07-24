@@ -23,14 +23,6 @@ import (
 
 var _ = Describe("Types in EDN", func() {
 	Context("with the default usage", func() {
-		It("initialization should not panic the first iteration, but should on the second.", func() {
-
-			for key := range typeFactories {
-				delete(typeFactories, key)
-			}
-			Ω(initAll).ShouldNot(Panic())
-			Ω(initAll).Should(Panic())
-		})
 
 		typeCollectionMap := map[ElementType]struct {
 			value bool

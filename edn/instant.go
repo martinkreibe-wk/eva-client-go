@@ -15,6 +15,7 @@
 package edn
 
 import (
+	"strings"
 	"time"
 )
 
@@ -22,10 +23,17 @@ const (
 
 	// InstantElementTag defines the instant tag value.
 	InstantElementTag = "inst"
+	InstPattern       = "\"[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9](\\.[0-9][0-9])?Z([0-9][0-9]:[0-9][0-9])?\""
 )
 
 // instStringProcessor used the string processor but will accurately create the instances.
 func instStringProcessor(tokenValue string) (Element, error) {
+	if !strings.HasPrefix(tokenValue, "\"") || !strings.HasSuffix(tokenValue, "\"") {
+		return nil, MakeError(ErrParserError, "Expected inst to start and end with quotes.")
+	}
+
+	tokenValue = tokenValue[1 : len(tokenValue)-1]
+
 	timeVal, err := time.Parse(time.RFC3339, tokenValue)
 	if err != nil {
 		return nil, err
@@ -43,8 +51,8 @@ func instantFactory(input interface{}) (Element, error) {
 }
 
 // init will add the element factory to the collection of factories
-func initInstant(_ Lexer) error {
-	return addElementTypeFactory(InstantType, instantFactory)
+func initInstant(lexer Lexer) error {
+	return lexer.AddPrimitiveFactory(StringPrimitive, InstantType, InstantElementTag, instantFactory, instStringProcessor, InstPattern)
 }
 
 func instantSerializer(serializer Serializer, tag string, value interface{}) (string, error) {

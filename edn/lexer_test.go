@@ -111,19 +111,4 @@ var _ = Describe("Lexer tests", func() {
 		Ω(elem).Should(BeNil())
 		Ω(err).Should(test.HaveMessage(ErrParserError))
 	})
-
-	It("should be able to test the compiler for errors", func() {
-		lexer, err := newLexer()
-		Ω(err).Should(BeNil())
-		impl := lexer.(*lexerImpl)
-
-		impl.AddPattern(IntegerPrimitive, int64Regex, parseInt64Elem)
-
-		var elem Element
-		elem, err = lexer.Parse(strings.NewReader("123"))
-		Ω(err).Should(BeNil())
-		Ω(elem).ShouldNot(BeNil())
-		Ω(elem.ElementType()).Should(BeEquivalentTo(IntegerType))
-
-	})
 })

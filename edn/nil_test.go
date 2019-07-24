@@ -25,21 +25,24 @@ var _ = Describe("Nil in EDN", func() {
 		lexer, err := newLexer()
 		Ω(err).Should(BeNil())
 
-		delete(typeFactories, NilType)
+		lexer.RemoveFactory(NilType, NoTag)
 		err = initNil(lexer)
 		Ω(err).Should(BeNil())
-		_, has := typeFactories[NilType]
+		_, has := lexer.GetFactory(NilType, NoTag)
 		Ω(has).Should(BeTrue())
 
 		err = initNil(lexer)
 		Ω(err).ShouldNot(BeNil())
-		Ω(err).Should(test.HaveMessage(ErrInvalidFactory))
 	})
 
 	It("should create elements from the factory", func() {
 		var v interface{}
 
-		elem, err := typeFactories[NilType](v)
+		lexer, err := newLexer()
+		Ω(err).Should(BeNil())
+		fact, has := lexer.GetFactory(NilType, NoTag)
+		Ω(has).Should(BeTrue())
+		elem, err := fact(v)
 		Ω(err).Should(BeNil())
 		Ω(elem.ElementType()).Should(BeEquivalentTo(NilType))
 		Ω(elem.Value()).Should(BeNil())
@@ -48,7 +51,11 @@ var _ = Describe("Nil in EDN", func() {
 	It("should not create elements from the factory if the input is not a the right type", func() {
 		v := "foo"
 
-		elem, err := typeFactories[NilType](v)
+		lexer, err := newLexer()
+		Ω(err).Should(BeNil())
+		fact, has := lexer.GetFactory(NilType, NoTag)
+		Ω(has).Should(BeTrue())
+		elem, err := fact(v)
 		Ω(err).ShouldNot(BeNil())
 		Ω(err).Should(test.HaveMessage(ErrInvalidInput))
 		Ω(elem).Should(BeNil())

@@ -15,6 +15,8 @@
 package edn
 
 import (
+	"strings"
+
 	"github.com/mattrobenolt/gocql/uuid"
 )
 
@@ -22,25 +24,42 @@ const (
 
 	// UUIDElementTag defines the uuid tag value.
 	UUIDElementTag = "uuid"
+
+	// 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+	UUIDPattern = "\"" +
+		"[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]" + // 8
+		"[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]-" +
+		"[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]-" + // 4
+		"[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]-" + // 4
+		"[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]-" + // 4
+		"[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]" + // 12
+		"[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]" +
+		"[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]\""
 )
 
 // uuidStringProcessor used the string processor but will accurately create the uuid.
 func uuidStringProcessor(tokenValue string) (Element, error) {
-	id, err := uuid.ParseUUID(tokenValue)
-	if err != nil {
-		return nil, err
-	}
-
-	return NewUUIDElement(id)
+	return uuidFactory(tokenValue)
 }
 
 func uuidFactory(input interface{}) (Element, error) {
-	v, ok := input.(uuid.UUID)
-	if !ok {
+	switch v := input.(type) {
+	case string:
+		if !strings.HasPrefix(v, "\"") || !strings.HasSuffix(v, "\"") {
+			return nil, MakeError(ErrParserError, "Expected uuid to start and end with quotes.")
+		}
+
+		id, err := uuid.ParseUUID(v[1 : len(v)-1])
+		if err != nil {
+			return nil, err
+		}
+
+		return NewUUIDElement(id)
+	case uuid.UUID:
+		return NewUUIDElement(v)
+	default:
 		return nil, MakeError(ErrInvalidInput, input)
 	}
-
-	return NewUUIDElement(v)
 }
 
 func uuidSerializer(serializer Serializer, tag string, value interface{}) (string, error) {
@@ -57,8 +76,8 @@ func uuidSerializer(serializer Serializer, tag string, value interface{}) (strin
 }
 
 // init will add the element factory to the collection of factories
-func initUUID(_ Lexer) (err error) {
-	return addElementTypeFactory(UUIDType, uuidFactory)
+func initUUID(lexer Lexer) (err error) {
+	return lexer.AddPrimitiveFactory(StringPrimitive, UUIDType, UUIDElementTag, uuidFactory, uuidStringProcessor, UUIDPattern)
 }
 
 // NewInstantElement creates a new instant element or an error.

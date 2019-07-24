@@ -43,88 +43,39 @@ func fromChar(input interface{}) (Element, error) {
 	return NewCharacterElement(v)
 }
 
-// parseSpecialCharElem parses the special string into a character Element
-func parseSpecialCharElem(tag string, tokenValue string) (Element, error) {
+// parseSpecialCharElem parses the standard string into a character Element
+func parseCharElem(value string) (Element, error) {
 
 	// strip the first '\' char.
-	if !strings.HasPrefix(tokenValue, string(CharacterPrefix)) {
-		return nil, MakeError(ErrParserError, "Missing character prefix.")
+	if strings.HasPrefix(value, string(CharacterPrefix)) {
+		value = strings.TrimPrefix(value, CharacterPrefix)
 	}
 
-	var r rune
-	var has bool
-	if r, has = specialCharacters[strings.TrimPrefix(tokenValue, string(CharacterPrefix))]; !has {
-		return nil, MakeErrorWithFormat(ErrParserError, "Unknown character %s", tokenValue)
+	if strings.HasPrefix(value, "u") && len(value) > 1 {
+		value = strings.TrimPrefix(value, "u")
+
+		// It isn't possible to get anything other then 4 characters, so checking isn't needed.
+		v, err := strconv.ParseInt(value, 16, 16)
+		if err != nil {
+			return nil, MakeErrorWithFormat(ErrParserError, "`%s` could not be converted to a hex value: %v", value, err)
+		}
+
+		return NewCharacterElement(rune(v))
 	}
 
-	elem, err := NewCharacterElement(r)
-	if err != nil {
-		return nil, err
-	}
-	if err = elem.SetTag(tag); err != nil {
-		return nil, err
+	if r, has := specialCharacters[value]; has {
+		return NewCharacterElement(r)
 	}
 
-	return elem, nil
-}
-
-// parseSpecialCharElem parses the unicode string into a character Element
-func parseUnicodeCharElem(tag string, tokenValue string) (Element, error) {
-	tokenValue = strings.TrimPrefix(tokenValue, CharacterPrefix+"u")
-
-	// It isn't possible to get anything other then 4 characters, so checking isn't needed.
-	v, err := strconv.ParseInt(tokenValue, 16, 16)
-	if err != nil {
-		return nil, err
-	}
-
-	elem, err := NewCharacterElement(rune(v))
-	if err != nil {
-		return nil, err
-	}
-
-	err = elem.SetTag(tag)
-	if err != nil {
-		return nil, err
-	}
-
-	return elem, nil
-}
-
-// parseSpecialCharElem parses the standard string into a character Element
-func parseCharElem(tag string, tokenValue string) (Element, error) {
-
-	tokenValue = strings.TrimPrefix(tokenValue, CharacterPrefix)
-	runes := []rune(tokenValue)
+	runes := []rune(value)
 
 	// It isn't possible to get anything other then a single character, so checking isn't needed.
-	elem, err := NewCharacterElement(runes[0])
-	if err != nil {
-		return nil, err
-	}
-
-	err = elem.SetTag(tag)
-	if err != nil {
-		return nil, err
-	}
-
-	return elem, nil
+	return NewCharacterElement(runes[0])
 }
 
 // initCharacter will add the element factory to the collection of factories
 func initCharacter(lexer Lexer) error {
-	if err := addElementTypeFactory(CharacterType, fromChar); err != nil {
-		return err
-	}
-
-	for v := range specialCharacters {
-		lexer.AddPattern(CharacterPrimitive, `\\`+v, parseSpecialCharElem)
-	}
-
-	lexer.AddPattern(CharacterPrimitive, `\\u[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]`, parseUnicodeCharElem)
-	lexer.AddPattern(CharacterPrimitive, `\\\w`, parseCharElem)
-
-	return nil
+	return lexer.AddPrimitiveFactory(CharacterPrimitive, CharacterType, NoTag, fromChar, parseCharElem, `\\([A-Z0-9a-mo-qv-z]|n(ewline)?|r(eturn)?|s(pace)?|t(ab)?|u([0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f])?)`)
 }
 
 // charSerializer takes the input value and serialize it.

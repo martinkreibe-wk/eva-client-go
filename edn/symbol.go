@@ -49,24 +49,21 @@ const (
 	symbolRegex = `^((` + numericModifierSymbols + `)|((((` + numericModifierSymbols + `)(` + legalFirstSymbols + `|[[:alpha:]]))|(` + legalFirstSymbols + `|[[:alpha:]]))+(` + numericModifierSymbols + `|` + legalFirstSymbols + `|` + specialSymbols + `|[[:alnum:]])*))$`
 )
 
-func fromSymbol(tag string, tokenValue string) (Element, error) {
-	elem, err := NewSymbolElement(tokenValue)
-	if err != nil {
-		return nil, err
-	}
+func parseSymbol(tokenValue string) (Element, error) {
+	return NewSymbolElement(tokenValue)
+}
 
-	err = elem.SetTag(tag)
-	if err != nil {
-		return nil, err
+func fromSymbol(input interface{}) (Element, error) {
+	v, ok := input.(string)
+	if !ok {
+		return nil, MakeErrorWithFormat(ErrInvalidInput, "Value: %#v", input)
 	}
-
-	return elem, nil
+	return NewSymbolElement(v)
 }
 
 // init will add the element factory to the collection of factories
 func initSymbol(lexer Lexer) error {
-	lexer.AddPattern(SymbolPrimitive, "[*!?$%&=<>_a-zA-Z.]([-+*!?$%&=<>_.#]|\\w)*(/([-+*!?$%&=<>_.#]|\\w)*)?", fromSymbol)
-	return nil
+	return lexer.AddPrimitiveFactory(SymbolPrimitive, SymbolType, NoTag, fromSymbol, parseSymbol, "[*!?$%&=<>_a-zA-Z.]([-+*!?$%&=<>_.#]|\\w)*(/([-+*!?$%&=<>_.#]|\\w)*)?")
 }
 
 // symbolMatcher is the matching mechanism for symbols

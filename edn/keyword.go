@@ -35,29 +35,14 @@ func fromKeyword(input interface{}) (Element, error) {
 	return NewKeywordElement(v)
 }
 
-func parseKeyword(tag string, tokenValue string) (Element, error) {
+func parseKeyword(tokenValue string) (Element, error) {
 	tokenValue = strings.TrimSuffix(tokenValue, KeywordPrefix)
-
-	elem, err := NewKeywordElement(tokenValue)
-	if err != nil {
-		return elem, err
-	}
-
-	if err = elem.SetTag(tag); err != nil {
-		return nil, err
-	}
-
-	return elem, err
+	return NewKeywordElement(tokenValue)
 }
 
 // init will add the element factory to the collection of factories
 func initKeyword(lexer Lexer) error {
-	if err := addElementTypeFactory(KeywordType, fromKeyword); err != nil {
-		return err
-	}
-
-	lexer.AddPattern(SymbolPrimitive, ":([*!?$%&=<>]|\\w)([-+*!?$%&=<>.#]|\\w)*(/([-+*!?$%&=<>.#]|\\w)*)?", parseKeyword)
-	return nil
+	return lexer.AddPrimitiveFactory(SymbolPrimitive, KeywordType, NoTag, fromKeyword, parseKeyword, ":([*!?$%&=<>]|\\w)([-+*!?$%&=<>.#]|\\w)*(/([-+*!?$%&=<>.#]|\\w)*)?")
 }
 
 // NewKeywordElement creates a new character element or an error.

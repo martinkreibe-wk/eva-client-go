@@ -27,21 +27,24 @@ var _ = Describe("String in EDN", func() {
 			lexer, err := newLexer()
 			Ω(err).Should(BeNil())
 
-			delete(typeFactories, StringType)
+			lexer.RemoveFactory(StringType, NoTag)
 			err = initString(lexer)
 			Ω(err).Should(BeNil())
-			_, has := typeFactories[StringType]
+			_, has := lexer.GetFactory(StringType, NoTag)
 			Ω(has).Should(BeTrue())
 
 			err = initString(lexer)
 			Ω(err).ShouldNot(BeNil())
-			Ω(err).Should(test.HaveMessage(ErrInvalidFactory))
 		})
 
 		It("should create elements from the factory", func() {
 			v := "Hello world"
 
-			elem, err := typeFactories[StringType](v)
+			lexer, err := newLexer()
+			Ω(err).Should(BeNil())
+			fact, has := lexer.GetFactory(StringType, NoTag)
+			Ω(has).Should(BeTrue())
+			elem, err := fact(v)
 			Ω(err).Should(BeNil())
 			Ω(elem.ElementType()).Should(BeEquivalentTo(StringType))
 			Ω(elem.Value()).Should(BeEquivalentTo(v))
@@ -50,7 +53,11 @@ var _ = Describe("String in EDN", func() {
 		It("should not create elements from the factory if the input is not a the right type", func() {
 			v := 123
 
-			elem, err := typeFactories[StringType](v)
+			lexer, err := newLexer()
+			Ω(err).Should(BeNil())
+			fact, has := lexer.GetFactory(StringType, NoTag)
+			Ω(has).Should(BeTrue())
+			elem, err := fact(v)
 			Ω(err).ShouldNot(BeNil())
 			Ω(err).Should(test.HaveMessage(ErrInvalidInput))
 			Ω(elem).Should(BeNil())
@@ -58,7 +65,7 @@ var _ = Describe("String in EDN", func() {
 
 		It("fail parsing invalid escapes.", func() {
 			val := "\"this is not valued! \\u5\""
-			elem, err := normalStringProcessor(val)
+			elem, err := parseString(val)
 			Ω(err).ShouldNot(BeNil())
 			Ω(elem).Should(BeNil())
 			Ω(err).Should(test.HaveMessage(ErrParserError))
@@ -66,7 +73,7 @@ var _ = Describe("String in EDN", func() {
 
 		It("fail parsing invalid escapes.", func() {
 			val := "this is not valued! \\"
-			elem, err := normalStringProcessor(val)
+			elem, err := parseString(val)
 			Ω(err).ShouldNot(BeNil())
 			Ω(elem).Should(BeNil())
 			Ω(err).Should(test.HaveMessage(ErrParserError))

@@ -27,10 +27,10 @@ var _ = Describe("Float in EDN", func() {
 			lexer, err := newLexer()
 			Ω(err).Should(BeNil())
 
-			delete(typeFactories, FloatType)
+			lexer.RemoveFactory(FloatType, NoTag)
 			err = initFloat(lexer)
 			Ω(err).Should(BeNil())
-			_, has := typeFactories[FloatType]
+			_, has := lexer.GetFactory(FloatType, NoTag)
 			Ω(has).Should(BeTrue())
 
 			err = initFloat(lexer)
@@ -41,7 +41,11 @@ var _ = Describe("Float in EDN", func() {
 		It("should create elements from the factory", func() {
 			v := float64(1.234)
 
-			elem, err := typeFactories[FloatType](v)
+			lexer, err := newLexer()
+			Ω(err).Should(BeNil())
+			fact, has := lexer.GetFactory(FloatType, NoTag)
+			Ω(has).Should(BeTrue())
+			elem, err := fact(v)
 			Ω(err).Should(BeNil())
 			Ω(elem.ElementType()).Should(BeEquivalentTo(FloatType))
 			Ω(elem.Value()).Should(BeEquivalentTo(v))
@@ -50,7 +54,11 @@ var _ = Describe("Float in EDN", func() {
 		It("should not create elements from the factory if the input is not a the right type", func() {
 			v := "foo"
 
-			elem, err := typeFactories[FloatType](v)
+			lexer, err := newLexer()
+			Ω(err).Should(BeNil())
+			fact, has := lexer.GetFactory(FloatType, NoTag)
+			Ω(has).Should(BeTrue())
+			elem, err := fact(v)
 			Ω(err).ShouldNot(BeNil())
 			Ω(err).Should(test.HaveMessage(ErrInvalidInput))
 			Ω(elem).Should(BeNil())

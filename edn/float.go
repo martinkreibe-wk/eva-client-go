@@ -29,7 +29,7 @@ func fromFloat(input interface{}) (Element, error) {
 }
 
 // parseFloatElem parses the string into a float Element
-func parseFloatElem(tag string, tokenValue string) (Element, error) {
+func parseFloatElem(tokenValue string) (Element, error) {
 
 	if strings.HasSuffix(tokenValue, "M") {
 		tokenValue = strings.TrimSuffix(tokenValue, "M")
@@ -40,16 +40,7 @@ func parseFloatElem(tag string, tokenValue string) (Element, error) {
 		return nil, err
 	}
 
-	elem, err := NewFloatElement(v)
-	if err != nil {
-		return nil, err
-	}
-
-	if err = elem.SetTag(tag); err != nil {
-		return nil, err
-	}
-
-	return elem, nil
+	return NewFloatElement(v)
 }
 
 // floatSerialize takes the input value and serialize it.
@@ -68,13 +59,7 @@ func floatSerialize(serializer Serializer, tag string, value interface{}) (strin
 
 // init will add the element factory to the collection of factories
 func initFloat(lexer Lexer) error {
-	if err := addElementTypeFactory(FloatType, fromFloat); err != nil {
-		return err
-	}
-
-	lexer.AddPattern(FloatPrimitive, "[-+]?(0|[1-9][0-9]*)(\\.[0-9]*)?([eE][-+]?[0-9]+)?M?", parseFloatElem)
-
-	return nil
+	return lexer.AddPrimitiveFactory(FloatPrimitive, FloatType, NoTag, fromFloat, parseFloatElem, "[-+]?(0|[1-9][0-9]*)(\\.[0-9]*)?([eE][-+]?[0-9]+)?M?")
 }
 
 // NewFloatElement creates a new float point element or an error.

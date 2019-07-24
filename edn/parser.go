@@ -23,19 +23,6 @@ const (
 	ErrParserError = ErrorMessage("Parser error")
 )
 
-// globalLexer holds the global lexer.
-var globalLexer Lexer
-
-// getLexer returns the global lexer or an error.
-func getLexer() (lexer Lexer, err error) {
-
-	if globalLexer == nil {
-		globalLexer, err = newLexer()
-	}
-
-	return globalLexer, err
-}
-
 // Parse the string into an edn element.
 func ParseString(data string) (elem Element, err error) {
 	return Parse(strings.NewReader(data))
@@ -47,26 +34,27 @@ func ParseCollectionString(data string) (elem CollectionElement, err error) {
 }
 
 // Parse the string into an edn element.
-func Parse(data io.Reader) (elem Element, err error) {
+func Parse(data io.Reader) (Element, error) {
 
-	var lex Lexer
-	if lex, err = getLexer(); err == nil {
-		elem, err = lex.Parse(data)
+	lex, err := newLexer()
+	if err != nil {
+		return nil, err
 	}
-	return elem, err
+
+	return lex.Parse(data)
 }
 
 // ParseCollection will parse a collection.
-func ParseCollection(data io.Reader) (elem CollectionElement, err error) {
+func ParseCollection(data io.Reader) (CollectionElement, error) {
 
-	var rawElem Element
-	if rawElem, err = Parse(data); err == nil {
-		if rawElem.ElementType().IsCollection() {
-			elem = rawElem.(CollectionElement)
-		} else {
-			err = MakeErrorWithFormat(ErrParserError, "Parsed an element, but was not a collection")
-		}
+	elem, err := Parse(data)
+	if err != nil {
+		return nil, err
 	}
 
-	return elem, err
+	if !elem.ElementType().IsCollection() {
+		return nil, MakeErrorWithFormat(ErrParserError, "Parsed an element, but was not a collection")
+	}
+
+	return elem.(CollectionElement), nil
 }

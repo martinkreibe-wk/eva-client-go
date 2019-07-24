@@ -23,15 +23,8 @@ func fromNil(input interface{}) (Element, error) {
 }
 
 // parseNil parses the string into a nil Element
-func parseNil(tag string, _ string) (Element, error) {
-	elem, err := NewNilElement()
-	if err != nil {
-		return nil, err
-	}
-	if err = elem.SetTag(tag); err != nil {
-		return nil, err
-	}
-	return elem, nil
+func parseNil(_ string) (Element, error) {
+	return NewNilElement()
 }
 
 // nilSerializer takes the input value and serialize it.
@@ -49,12 +42,7 @@ func nilSerializer(serializer Serializer, tag string, _ interface{}) (out string
 
 // initNil will add the element factory to the collection of factories
 func initNil(lexer Lexer) error {
-	if err := addElementTypeFactory(NilType, fromNil); err != nil {
-		return err
-	}
-
-	lexer.AddPattern(LiteralPrimitive, "nil", parseNil)
-	return nil
+	return lexer.AddPrimitiveFactory(LiteralPrimitive, NilType, NoTag, fromNil, parseNil, "nil")
 }
 
 // NewNilElement returns the nil element or an error.

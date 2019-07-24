@@ -53,42 +53,52 @@ type Element interface {
 }
 
 // stereotypePrimitive returns the cleaned value and stereotype, or it returns an error.
-func stereotypePrimitive(value interface{}) (interface{}, ElementType, error) {
+func stereotypePrimitive(value interface{}) (interface{}, ElementType, string, error) {
 
 	switch v := value.(type) {
 	case int:
-		return int64(v), IntegerType, nil
+		return int64(v), IntegerType, NoTag, nil
 	case int32:
-		return int64(v), IntegerType, nil
+		return int64(v), IntegerType, NoTag, nil
 	case bool:
-		return v, BooleanType, nil
+		return v, BooleanType, NoTag, nil
 	case int64:
-		return int64(v), IntegerType, nil
+		return int64(v), IntegerType, NoTag, nil
 	case float32:
-		return float64(v), FloatType, nil
+		return float64(v), FloatType, NoTag, nil
 	case float64:
-		return v, FloatType, nil
+		return v, FloatType, NoTag, nil
 	case string:
 		if v == "nil" {
-			return nil, NilType, nil
+			return nil, NilType, NoTag, nil
 		}
 
 		if len(v) > 0 && v[0] == ':' {
-			return v, KeywordType, nil
+			return v, KeywordType, NoTag, nil
 		}
 
-		return v, StringType, nil
+		return v, StringType, NoTag, nil
 	case time.Time:
-		return v, InstantType, nil
+		return v, InstantType, InstantElementTag, nil
 	case uuid.UUID:
-		return v, UUIDType, nil
+		return v, UUIDType, UUIDElementTag, nil
 	default:
-		return nil, UnknownType, MakeErrorWithFormat(ErrUnknownMimeType, "[%T]: %#v", v, v)
+		return nil, UnknownType, NoTag, MakeErrorWithFormat(ErrUnknownMimeType, "[%T]: %#v", v, v)
 	}
 }
 
 // NewPrimitiveElement creates a new primitive element from the inputs.
 func NewPrimitiveElement(value interface{}) (Element, error) {
+	lexer, err := newLexer()
+	if err != nil {
+		return nil, err
+	}
+
+	return NewPrimitiveElementWithLexer(lexer, value)
+}
+
+// NewPrimitiveElement creates a new primitive element from the inputs.
+func NewPrimitiveElementWithLexer(lexer Lexer, value interface{}) (Element, error) {
 
 	if value == nil {
 		return NewNilElement()
@@ -98,14 +108,14 @@ func NewPrimitiveElement(value interface{}) (Element, error) {
 		return elem, nil
 	}
 
-	val, stereotype, err := stereotypePrimitive(value)
+	val, stereotype, tag, err := stereotypePrimitive(value)
 	if err != nil {
 		return nil, err
 	}
 
-	factory, has := typeFactories[stereotype]
+	factory, has := lexer.GetFactory(stereotype, tag)
 	if !has {
-		return nil, MakeErrorWithFormat(ErrInvalidElement, "type: %s", stereotype.Name())
+		return nil, MakeErrorWithFormat(ErrInvalidElement, "type: `%s`, tag: `%s`", stereotype.Name(), tag)
 	}
 
 	return factory(val)
@@ -113,6 +123,6 @@ func NewPrimitiveElement(value interface{}) (Element, error) {
 
 // IsPrimitive checks to see if the input variable is
 func IsPrimitive(value interface{}) bool {
-	_, stereotype, _ := stereotypePrimitive(value)
+	_, stereotype, _, _ := stereotypePrimitive(value)
 	return stereotype != UnknownType
 }

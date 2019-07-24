@@ -16,14 +16,12 @@ package edn
 
 import (
 	"strconv"
+	"strings"
 )
 
-type stringProcessor func(string) (Element, error)
-
-var stringProcessors = map[string]stringProcessor{
-	UUIDElementTag:    uuidStringProcessor,
-	InstantElementTag: instStringProcessor,
-}
+const (
+	StringPattern = "\"(\\w|\\d| |[-+*!?$%&=<>.#:()\\[\\]@^;,/{}'|`~]|\\\\([tbnrf\"'\\\\]|u[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]))*\""
+)
 
 var specialStrings = map[rune]rune{
 	't':  '\t',
@@ -36,8 +34,21 @@ var specialStrings = map[rune]rune{
 	'"':  '"',
 }
 
-// normalStringProcessor defines the rule for normal string processing.
-func normalStringProcessor(tokenValue string) (Element, error) {
+func stringFactory(input interface{}) (Element, error) {
+	v, ok := input.(string)
+	if !ok {
+		return nil, MakeError(ErrInvalidInput, input)
+	}
+	return NewStringElement(v)
+}
+
+func parseString(tokenValue string) (Element, error) {
+
+	if !strings.HasPrefix(tokenValue, "\"") || !strings.HasSuffix(tokenValue, "\"") {
+		return nil, MakeError(ErrParserError, "Expected string to start and end with quotes.")
+	}
+
+	tokenValue = tokenValue[1 : len(tokenValue)-1]
 	length := len(tokenValue)
 
 	var out []rune
@@ -78,43 +89,9 @@ func normalStringProcessor(tokenValue string) (Element, error) {
 	return NewStringElement(string(out))
 }
 
-func stringFactory(input interface{}) (Element, error) {
-	v, ok := input.(string)
-	if !ok {
-		return nil, MakeError(ErrInvalidInput, input)
-	}
-	return NewStringElement(v)
-}
-
-func parseString(tag string, tokenValue string) (Element, error) {
-	var proc stringProcessor
-	var has bool
-
-	if proc, has = stringProcessors[tag]; !has {
-		proc = normalStringProcessor
-	}
-
-	elem, err := proc(tokenValue[1 : len(tokenValue)-1])
-	if err != nil {
-		return nil, err
-	}
-
-	err = elem.SetTag(tag)
-	if err != nil {
-		return nil, err
-	}
-
-	return elem, err
-}
-
 // init will add the element factory to the collection of factories
 func initString(lexer Lexer) error {
-	if err := addElementTypeFactory(StringType, stringFactory); err != nil {
-		return err
-	}
-	lexer.AddPattern(StringPrimitive, "\"(\\w|\\d| |[-+*!?$%&=<>.#:()\\[\\]@^;,/{}'|`~]|\\\\([tbnrf\"'\\\\]|u[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]))*\"", parseString)
-
-	return nil
+	return lexer.AddPrimitiveFactory(StringPrimitive, StringType, NoTag, stringFactory, parseString, StringPattern)
 }
 
 func stringSerializer(serializer Serializer, tag string, value interface{}) (string, error) {
