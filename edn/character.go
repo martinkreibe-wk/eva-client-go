@@ -73,11 +73,6 @@ func parseCharElem(value string) (Element, error) {
 	return NewCharacterElement(runes[0])
 }
 
-// initCharacter will add the element factory to the collection of factories
-func initCharacter(lexer Lexer) error {
-	return lexer.AddPrimitiveFactory(CharacterPrimitive, CharacterType, NoTag, fromChar, parseCharElem, `\\([A-Z0-9a-mo-qv-z]|n(ewline)?|r(eturn)?|s(pace)?|t(ab)?|u([0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f])?)`)
-}
-
 // charSerializer takes the input value and serialize it.
 func charSerializer(serializer Serializer, tag string, value interface{}) (string, error) {
 

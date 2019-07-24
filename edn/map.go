@@ -32,34 +32,6 @@ const (
 	ErrDuplicateKey = ErrorMessage("Duplicate key found")
 )
 
-func initMap(lexer Lexer) (err error) {
-
-	makePairs := func(elements []Element) (pairs Pairs, err error) {
-
-		if l := len(elements); l%2 == 0 {
-			for i := 0; i < l; i = i + 2 {
-				pairs.Append(elements[i], elements[i+1])
-			}
-		} else {
-			err = MakeError(ErrInvalidPair, "Map input are not paired up.")
-		}
-
-		return pairs, err
-	}
-
-	lexer.AddCollectionPattern(MapStartLiteral, MapEndLiteral, func(tag string, elements []Element) (el Element, e error) {
-		var pairs Pairs
-		if pairs, e = makePairs(elements); e == nil {
-			if el, e = NewMap(pairs.Raw()...); e == nil {
-				e = el.SetTag(tag)
-			}
-		}
-		return el, e
-	})
-
-	return err
-}
-
 // NewMap creates a new vector
 func NewMap(pairs ...Pair) (elem CollectionElement, err error) {
 

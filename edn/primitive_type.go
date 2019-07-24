@@ -14,19 +14,14 @@
 
 package edn
 
-import (
-	"io"
+type PrimitiveType int
+
+const (
+	LiteralPrimitive PrimitiveType = iota
+	IntegerPrimitive
+	FloatPrimitive
+	CharacterPrimitive
+	SymbolPrimitive
+	StringPrimitive
+	lastPrimitivePriority
 )
-
-type PrimitiveProcessor func(value string) (Element, error)
-type CollectionProcessor func(elements []Element) (el CollectionElement, e error)
-
-// ElementTypeFactory defines the factory for an element.
-type ElementTypeFactory func(interface{}) (Element, error)
-
-// Lexer defines the lexical analyser for the
-type Lexer interface {
-	GetFactory(elementType ElementType, tag string) (ElementTypeFactory, bool)
-
-	Parse(data io.Reader) (Element, error)
-}

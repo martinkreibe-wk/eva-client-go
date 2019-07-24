@@ -63,11 +63,6 @@ func int64Serializer(serializer Serializer, tag string, value interface{}) (stri
 	}
 }
 
-// initInteger will add the element factory to the collection of factories
-func initInteger(lexer Lexer) error {
-	return lexer.AddPrimitiveFactory(IntegerPrimitive, IntegerType, NoTag, fromInt64, parseInt64Elem, int64Regex)
-}
-
 // NewIntegerElement creates a new integer element or an error.
 func NewIntegerElement(value int64) (Element, error) {
 	return baseFactory().make(value, IntegerType, int64Serializer)

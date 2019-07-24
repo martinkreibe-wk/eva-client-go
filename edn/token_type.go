@@ -14,19 +14,26 @@
 
 package edn
 
-import (
-	"io"
+type tokenType string
+
+const (
+
+	// because all blanks are skipped, all these token types are # of blanks.
+	skipToken    tokenType = " "
+	elementToken tokenType = "  "
 )
 
-type PrimitiveProcessor func(value string) (Element, error)
-type CollectionProcessor func(elements []Element) (el CollectionElement, e error)
+func (tt tokenType) String() string {
+	switch tt {
+	case skipToken:
+		return "[Skip Token]"
+	case elementToken:
+		return "[Element]"
+	default:
+		return string(tt)
+	}
+}
 
-// ElementTypeFactory defines the factory for an element.
-type ElementTypeFactory func(interface{}) (Element, error)
-
-// Lexer defines the lexical analyser for the
-type Lexer interface {
-	GetFactory(elementType ElementType, tag string) (ElementTypeFactory, bool)
-
-	Parse(data io.Reader) (Element, error)
+func (tt tokenType) Is(this string) bool {
+	return string(tt) == this
 }

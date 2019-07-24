@@ -50,11 +50,6 @@ func instantFactory(input interface{}) (Element, error) {
 	return NewInstantElement(v)
 }
 
-// init will add the element factory to the collection of factories
-func initInstant(lexer Lexer) error {
-	return lexer.AddPrimitiveFactory(StringPrimitive, InstantType, InstantElementTag, instantFactory, instStringProcessor, InstPattern)
-}
-
 func instantSerializer(serializer Serializer, tag string, value interface{}) (string, error) {
 	switch serializer.MimeType() {
 	case EvaEdnMimeType:

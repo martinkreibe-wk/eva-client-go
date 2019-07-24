@@ -22,21 +22,6 @@ import (
 
 var _ = Describe("String in EDN", func() {
 	Context("", func() {
-
-		It("should initialize without issue", func() {
-			lexer, err := newLexer()
-			Ω(err).Should(BeNil())
-
-			lexer.RemoveFactory(StringType, NoTag)
-			err = initString(lexer)
-			Ω(err).Should(BeNil())
-			_, has := lexer.GetFactory(StringType, NoTag)
-			Ω(has).Should(BeTrue())
-
-			err = initString(lexer)
-			Ω(err).ShouldNot(BeNil())
-		})
-
 		It("should create elements from the factory", func() {
 			v := "Hello world"
 

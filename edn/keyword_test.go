@@ -23,21 +23,6 @@ import (
 var _ = Describe("Keyword in EDN", func() {
 	Context("", func() {
 
-		It("should initialize without issue", func() {
-			lexer, err := newLexer()
-			Ω(err).Should(BeNil())
-
-			lexer.RemoveFactory(KeywordType, NoTag)
-			err = initKeyword(lexer)
-			Ω(err).Should(BeNil())
-			_, has := lexer.GetFactory(KeywordType, NoTag)
-			Ω(has).Should(BeTrue())
-
-			err = initKeyword(lexer)
-			Ω(err).ShouldNot(BeNil())
-			Ω(err).Should(test.HaveMessage(ErrInvalidFactory))
-		})
-
 		It("should create elements from the factory", func() {
 			v := "testKeyword"
 

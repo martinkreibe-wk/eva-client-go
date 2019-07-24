@@ -56,11 +56,6 @@ func boolSerializer(serializer Serializer, tag string, value interface{}) (strin
 	}
 }
 
-// initBoolean will add the element factory to the collection of factories
-func initBoolean(lexer Lexer) error {
-	return lexer.AddPrimitiveFactory(LiteralPrimitive, BooleanType, NoTag, fromBool, parseBoolElem, "true", "false")
-}
-
 // NewBooleanElement creates a new boolean element or an error.
 func NewBooleanElement(value bool) (Element, error) {
 	return baseFactory().make(value, BooleanType, boolSerializer)

@@ -40,11 +40,6 @@ func nilSerializer(serializer Serializer, tag string, _ interface{}) (out string
 	}
 }
 
-// initNil will add the element factory to the collection of factories
-func initNil(lexer Lexer) error {
-	return lexer.AddPrimitiveFactory(LiteralPrimitive, NilType, NoTag, fromNil, parseNil, "nil")
-}
-
 // NewNilElement returns the nil element or an error.
 func NewNilElement() (Element, error) {
 	return baseFactory().make(nil, NilType, nilSerializer)

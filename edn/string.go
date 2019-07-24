@@ -89,11 +89,6 @@ func parseString(tokenValue string) (Element, error) {
 	return NewStringElement(string(out))
 }
 
-// init will add the element factory to the collection of factories
-func initString(lexer Lexer) error {
-	return lexer.AddPrimitiveFactory(StringPrimitive, StringType, NoTag, stringFactory, parseString, StringPattern)
-}
-
 func stringSerializer(serializer Serializer, tag string, value interface{}) (string, error) {
 	switch serializer.MimeType() {
 	case EvaEdnMimeType:

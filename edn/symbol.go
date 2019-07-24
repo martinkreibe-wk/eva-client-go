@@ -61,11 +61,6 @@ func fromSymbol(input interface{}) (Element, error) {
 	return NewSymbolElement(v)
 }
 
-// init will add the element factory to the collection of factories
-func initSymbol(lexer Lexer) error {
-	return lexer.AddPrimitiveFactory(SymbolPrimitive, SymbolType, NoTag, fromSymbol, parseSymbol, "[*!?$%&=<>_a-zA-Z.]([-+*!?$%&=<>_.#]|\\w)*(/([-+*!?$%&=<>_.#]|\\w)*)?")
-}
-
 // symbolMatcher is the matching mechanism for symbols
 var symbolMatcher = regexp.MustCompile(symbolRegex).MatchString
 

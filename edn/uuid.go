@@ -75,11 +75,6 @@ func uuidSerializer(serializer Serializer, tag string, value interface{}) (strin
 	}
 }
 
-// init will add the element factory to the collection of factories
-func initUUID(lexer Lexer) (err error) {
-	return lexer.AddPrimitiveFactory(StringPrimitive, UUIDType, UUIDElementTag, uuidFactory, uuidStringProcessor, UUIDPattern)
-}
-
 // NewInstantElement creates a new instant element or an error.
 func NewUUIDElement(value uuid.UUID) (Element, error) {
 

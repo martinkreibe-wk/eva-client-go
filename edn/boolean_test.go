@@ -24,16 +24,6 @@ var _ = Describe("Boolean in EDN", func() {
 
 	Context("", func() {
 
-		It("should initialize without issue", func() {
-			lexer, err := newLexer()
-			Ω(err).Should(BeNil())
-			lexer.RemoveFactory(BooleanType, NoTag)
-			err = initBoolean(lexer)
-			Ω(err).Should(BeNil())
-			_, has := lexer.GetFactory(BooleanType, NoTag)
-			Ω(has).Should(BeTrue())
-		})
-
 		It("should create elements from the factory", func() {
 			lexer, err := newLexer()
 			Ω(err).Should(BeNil())

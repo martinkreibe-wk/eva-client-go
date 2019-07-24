@@ -40,11 +40,6 @@ func parseKeyword(tokenValue string) (Element, error) {
 	return NewKeywordElement(tokenValue)
 }
 
-// init will add the element factory to the collection of factories
-func initKeyword(lexer Lexer) error {
-	return lexer.AddPrimitiveFactory(SymbolPrimitive, KeywordType, NoTag, fromKeyword, parseKeyword, ":([*!?$%&=<>]|\\w)([-+*!?$%&=<>.#]|\\w)*(/([-+*!?$%&=<>.#]|\\w)*)?")
-}
-
 // NewKeywordElement creates a new character element or an error.
 //
 // Keywords are identifiers that typically designate themselves. They are semantically akin to enumeration values.

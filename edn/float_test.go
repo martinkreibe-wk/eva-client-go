@@ -23,21 +23,6 @@ import (
 var _ = Describe("Float in EDN", func() {
 	Context("", func() {
 
-		It("should initialize without issue", func() {
-			lexer, err := newLexer()
-			Ω(err).Should(BeNil())
-
-			lexer.RemoveFactory(FloatType, NoTag)
-			err = initFloat(lexer)
-			Ω(err).Should(BeNil())
-			_, has := lexer.GetFactory(FloatType, NoTag)
-			Ω(has).Should(BeTrue())
-
-			err = initFloat(lexer)
-			Ω(err).ShouldNot(BeNil())
-			Ω(err).Should(test.HaveMessage(ErrInvalidFactory))
-		})
-
 		It("should create elements from the factory", func() {
 			v := float64(1.234)
 

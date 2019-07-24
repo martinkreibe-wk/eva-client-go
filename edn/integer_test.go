@@ -23,21 +23,6 @@ import (
 var _ = Describe("Integer in EDN", func() {
 	Context("", func() {
 
-		It("should initialize without issue", func() {
-			lexer, err := newLexer()
-			Ω(err).Should(BeNil())
-
-			lexer.RemoveFactory(IntegerType, NoTag)
-			err = initInteger(lexer)
-			Ω(err).Should(BeNil())
-			_, has := lexer.GetFactory(IntegerType, NoTag)
-			Ω(has).Should(BeTrue())
-
-			err = initInteger(lexer)
-			Ω(err).ShouldNot(BeNil())
-			Ω(err).Should(test.HaveMessage(ErrInvalidFactory))
-		})
-
 		It("should create elements from the factory", func() {
 			v := int64(123)
 

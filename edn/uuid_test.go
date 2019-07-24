@@ -25,20 +25,6 @@ var _ = Describe("UUID in EDN", func() {
 
 	Context("", func() {
 
-		It("should initialize without issue", func() {
-			lexer, err := newLexer()
-			Ω(err).Should(BeNil())
-
-			lexer.RemoveFactory(UUIDType, UUIDElementTag)
-			err = initUUID(lexer)
-			Ω(err).Should(BeNil())
-			_, has := lexer.GetFactory(UUIDType, UUIDElementTag)
-			Ω(has).Should(BeTrue())
-
-			err = initUUID(lexer)
-			Ω(err).ShouldNot(BeNil())
-		})
-
 		It("should create elements from the factory", func() {
 			uuidValue := "12345678-90ab-cdef-9876-0123456789ab"
 			v, err := uuid.ParseUUID(uuidValue)

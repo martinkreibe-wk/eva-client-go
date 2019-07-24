@@ -26,17 +26,6 @@ const (
 	ListSeparatorLiteral = " "
 )
 
-func initList(lexer Lexer) (err error) {
-	lexer.AddCollectionPattern(ListStartLiteral, ListEndLiteral, func(tag string, elements []Element) (el Element, e error) {
-		if el, e = NewList(elements...); e == nil {
-			e = el.SetTag(tag)
-		}
-		return el, e
-	})
-
-	return err
-}
-
 // NewList creates a new group
 func NewList(elements ...Element) (elem CollectionElement, err error) {
 

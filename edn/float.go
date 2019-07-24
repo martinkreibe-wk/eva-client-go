@@ -57,11 +57,6 @@ func floatSerialize(serializer Serializer, tag string, value interface{}) (strin
 	}
 }
 
-// init will add the element factory to the collection of factories
-func initFloat(lexer Lexer) error {
-	return lexer.AddPrimitiveFactory(FloatPrimitive, FloatType, NoTag, fromFloat, parseFloatElem, "[-+]?(0|[1-9][0-9]*)(\\.[0-9]*)?([eE][-+]?[0-9]+)?M?")
-}
-
 // NewFloatElement creates a new float point element or an error.
 func NewFloatElement(value float64) (Element, error) {
 	return baseFactory().make(value, FloatType, floatSerialize)

@@ -26,18 +26,6 @@ const (
 	SetSeparatorLiteral = " "
 )
 
-func initSet(lexer Lexer) (err error) {
-
-	lexer.AddCollectionPattern(SetStartLiteral, SetEndLiteral, func(tag string, elements []Element) (el Element, e error) {
-		if el, e = NewSet(elements...); e == nil {
-			e = el.SetTag(tag)
-		}
-		return el, e
-	})
-
-	return err
-}
-
 // NewSet creates a new vector
 func NewSet(elements ...Element) (elem CollectionElement, err error) {
 

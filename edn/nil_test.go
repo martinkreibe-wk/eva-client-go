@@ -21,19 +21,6 @@ import (
 )
 
 var _ = Describe("Nil in EDN", func() {
-	It("should initialize without issue", func() {
-		lexer, err := newLexer()
-		Ω(err).Should(BeNil())
-
-		lexer.RemoveFactory(NilType, NoTag)
-		err = initNil(lexer)
-		Ω(err).Should(BeNil())
-		_, has := lexer.GetFactory(NilType, NoTag)
-		Ω(has).Should(BeTrue())
-
-		err = initNil(lexer)
-		Ω(err).ShouldNot(BeNil())
-	})
 
 	It("should create elements from the factory", func() {
 		var v interface{}

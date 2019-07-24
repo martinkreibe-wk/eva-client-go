@@ -25,21 +25,6 @@ import (
 var _ = Describe("Instant in EDN", func() {
 	Context("", func() {
 
-		It("should initialize without issue", func() {
-			lexer, err := newLexer()
-			Ω(err).Should(BeNil())
-
-			lexer.RemoveFactory(InstantType, InstantElementTag)
-			err = initInstant(lexer)
-			Ω(err).Should(BeNil())
-			_, has := lexer.GetFactory(InstantType, InstantElementTag)
-			Ω(has).Should(BeTrue())
-
-			err = initInstant(lexer)
-			Ω(err).ShouldNot(BeNil())
-			Ω(err).Should(test.HaveMessage(ErrInvalidFactory))
-		})
-
 		It("should create elements from the factory", func() {
 			v := time.Date(2017, 12, 28, 22, 20, 30, 450, time.UTC)
 
