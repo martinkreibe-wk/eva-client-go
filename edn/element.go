@@ -31,7 +31,6 @@ const (
 
 // Element defines the interface for EDN elements.
 type Element interface {
-	Serializable
 
 	// ElementType returns the current type of this element.
 	ElementType() ElementType

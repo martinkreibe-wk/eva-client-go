@@ -49,21 +49,7 @@ func parseInt64Elem(tokenValue string) (Element, error) {
 	return NewIntegerElement(v)
 }
 
-// int64Serializer takes the input value and serialize it.
-func int64Serializer(serializer Serializer, tag string, value interface{}) (string, error) {
-	switch serializer.MimeType() {
-	case EvaEdnMimeType:
-		var out string
-		if len(tag) > 0 {
-			out = TagPrefix + tag + " "
-		}
-		return out + strconv.FormatInt(value.(int64), 10), nil
-	default:
-		return "", MakeError(ErrUnknownMimeType, serializer.MimeType())
-	}
-}
-
 // NewIntegerElement creates a new integer element or an error.
 func NewIntegerElement(value int64) (Element, error) {
-	return baseFactory().make(value, IntegerType, NoTag, int64Serializer)
+	return baseFactory().make(value, IntegerType, NoTag)
 }

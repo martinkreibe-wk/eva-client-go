@@ -75,21 +75,13 @@ var _ = Describe("Character in EDN", func() {
 				Ω(elem).ShouldNot(BeNil())
 				Ω(elem.Value()).Should(BeEquivalentTo(r), fmt.Sprintf("For rune: %+q", r))
 
-				edn, err := elem.Serialize(EvaEdnMimeType)
+				var edn string
+				stream := NewStringStream()
+				err = EvaEdnMimeType.SerializeTo(stream, elem)
+				edn = stream.String()
 				Ω(err).Should(BeNil())
 				Ω(edn).Should(BeEquivalentTo(ser), fmt.Sprintf("For rune: %+q", r))
 			}
-		})
-
-		It("should serialize the character without an issue", func() {
-			elem, err := NewCharacterElement('x')
-			Ω(err).Should(BeNil())
-			Ω(elem).ShouldNot(BeNil())
-			Ω(elem.Value()).Should(BeEquivalentTo('x'), fmt.Sprintf("For rune: %+q", 'x'))
-
-			_, err = elem.Serialize(SerializerMimeType("InvalidSerializer"))
-			Ω(err).ShouldNot(BeNil())
-			Ω(err).Should(test.HaveMessage(ErrUnknownMimeType))
 		})
 
 		It("should create an character value with no error", func() {

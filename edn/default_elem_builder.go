@@ -16,9 +16,6 @@ package edn
 
 import "reflect"
 
-// stringerFunc defines the mechanism to stringify the element.
-type stringerFunc func(Serializer, string, interface{}) (string, error)
-
 // equalityFunc defines the mechanism testing equality
 type equalityFunc func(left, right Element) bool
 
@@ -33,7 +30,7 @@ var baseFactory = func() elementFactory {
 
 // TODO: make the maker a factory
 type elementFactory interface {
-	make(value interface{}, elementType ElementType, tag string, stringer stringerFunc) (elem *baseElemImpl, err error)
+	make(value interface{}, elementType ElementType, tag string) (elem *baseElemImpl, err error)
 	makeEquality() (func(left, right Element) (result bool), error)
 }
 
@@ -44,22 +41,18 @@ func (builder *defaultBuilder) makeEquality() (func(left, right Element) (result
 }
 
 // makeBaseElement creates the base element.
-func (builder *defaultBuilder) make(value interface{}, elementType ElementType, tag string, stringer stringerFunc) (elem *baseElemImpl, err error) {
+func (builder *defaultBuilder) make(value interface{}, elementType ElementType, tag string) (elem *baseElemImpl, err error) {
 
-	if stringer != nil {
+	var equality func(left, right Element) (result bool)
+	if equality, err = builder.makeEquality(); err != nil {
+		return nil, err
+	}
 
-		var equality func(left, right Element) (result bool)
-		if equality, err = builder.makeEquality(); err == nil {
-			elem = &baseElemImpl{
-				elemType: elementType,
-				value:    value,
-				stringer: stringer,
-				equality: equality,
-				tag:      tag,
-			}
-		}
-	} else {
-		err = MakeError(ErrInvalidElement, "No stringer")
+	elem = &baseElemImpl{
+		elemType: elementType,
+		value:    value,
+		equality: equality,
+		tag:      tag,
 	}
 
 	return elem, err

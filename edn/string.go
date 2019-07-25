@@ -89,20 +89,7 @@ func parseString(tokenValue string) (Element, error) {
 	return NewStringElement(string(out))
 }
 
-func stringSerializer(serializer Serializer, tag string, value interface{}) (string, error) {
-	switch serializer.MimeType() {
-	case EvaEdnMimeType:
-		var out string
-		if len(tag) > 0 {
-			out = TagPrefix + tag + " "
-		}
-		return out + strconv.Quote(value.(string)), nil
-	default:
-		return "", MakeError(ErrUnknownMimeType, serializer.MimeType())
-	}
-}
-
 // NewStringElement creates a new string element or an error.
 func NewStringElement(value string) (Element, error) {
-	return baseFactory().make(value, StringType, NoTag, stringSerializer)
+	return baseFactory().make(value, StringType, NoTag)
 }

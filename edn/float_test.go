@@ -63,19 +63,11 @@ var _ = Describe("Float in EDN", func() {
 			Ω(err).Should(BeNil())
 			Ω(elem).ShouldNot(BeNil())
 
-			edn, err := elem.Serialize(EvaEdnMimeType)
+			stream := NewStringStream()
+			err = EvaEdnMimeType.SerializeTo(stream, elem)
+			edn := stream.String()
 			Ω(err).Should(BeNil())
 			Ω(edn).Should(BeEquivalentTo("1.234567E+04"))
-		})
-
-		It("should serialize the float without an issue", func() {
-			elem, err := NewFloatElement(testValue)
-			Ω(err).Should(BeNil())
-			Ω(elem).ShouldNot(BeNil())
-
-			_, err = elem.Serialize(SerializerMimeType("InvalidSerializer"))
-			Ω(err).ShouldNot(BeNil())
-			Ω(err).Should(test.HaveMessage(ErrUnknownMimeType))
 		})
 	})
 

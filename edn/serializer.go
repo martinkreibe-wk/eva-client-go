@@ -14,71 +14,41 @@
 
 package edn
 
-import "strings"
+import (
+	"fmt"
+	"io"
+)
 
 const (
 	// ErrUnknownMimeType defines an unknown serialization type.
 	ErrUnknownMimeType = ErrorMessage("unknown serialization mime type")
-
-	// DefaultMimeType defines the default serializer type.
-	DefaultMimeType = EvaEdnMimeType
 )
 
-var serializerFactories = map[SerializerMimeType]func(string) (Serializer, error){
-	EvaEdnMimeType.MimeType(): func(s string) (Serializer, error) {
-		return SerializerMimeType(s), nil
-	},
+type Stream interface {
+	io.Writer
+	fmt.Stringer
+}
+
+type StringStream struct {
+	value string
+}
+
+func NewStringStream() Stream {
+	return &StringStream{}
+}
+
+func (stream *StringStream) Write(p []byte) (int, error) {
+	stream.value += string(p)
+	return 0, nil
+}
+
+func (stream *StringStream) String() string {
+	return stream.value
 }
 
 // Serializer defines the interface for converting the entity into a serialized edn value.
 type Serializer interface {
 
-	// MimeType of serializer this is.
-	MimeType() SerializerMimeType
-
-	// Options returns the option value or false.
-	Options(string) (string, bool)
-}
-
-// GetSerializer will return the serializer requested or an error
-func GetSerializer(serializerType string) (serializer Serializer, err error) {
-	return GetSerializerByType(SerializerMimeType(serializerType))
-}
-
-type optionsProcessor func(string, string) bool
-
-func scrapeOptionFromMime(serializerType SerializerMimeType, processor optionsProcessor) (SerializerMimeType, string) {
-	mimeType := serializerType
-	strType := string(serializerType)
-	if index := strings.Index(strType, ";"); index != -1 {
-		mimeType = SerializerMimeType(strType[:index])
-
-		if processor != nil {
-			optionsStr := strType[index+1:]
-
-			options := strings.Split(optionsStr, ",")
-			for _, option := range options {
-				index = strings.Index(option, "=")
-
-				if !processor(option[:index], option[index+1:]) {
-					break
-				}
-			}
-		}
-	}
-
-	return mimeType, strType
-}
-
-// GetSerializerByType will return the serializer requested or an error
-func GetSerializerByType(serializerType SerializerMimeType) (serializer Serializer, err error) {
-
-	mimeType, strType := scrapeOptionFromMime(serializerType, nil)
-	if factory, has := serializerFactories[mimeType]; has {
-		serializer, err = factory(strType)
-	} else {
-		err = MakeError(ErrUnknownMimeType, serializerType)
-	}
-
-	return serializer, err
+	// Serialize the tag and value
+	SerializeTo(Stream, Element) error
 }

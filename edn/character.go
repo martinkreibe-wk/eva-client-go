@@ -15,7 +15,6 @@
 package edn
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 )
@@ -73,40 +72,7 @@ func parseCharElem(value string) (Element, error) {
 	return NewCharacterElement(runes[0])
 }
 
-// charSerializer takes the input value and serialize it.
-func charSerializer(serializer Serializer, tag string, value interface{}) (string, error) {
-
-	switch serializer.MimeType() {
-	case EvaEdnMimeType:
-		var out string
-		if len(tag) > 0 {
-			out = TagPrefix + tag + " "
-		}
-
-		val := value.(rune)
-
-		// look at the special characters first.
-		for v, r := range specialCharacters {
-			if val == r {
-				return out + CharacterPrefix + v, nil
-			}
-		}
-
-		// if there is no special character, then quote the rune, remove the single quotes around this, then
-		// if it is an ASCII then make sure to prefix is intact.
-		char := strings.Trim(fmt.Sprintf("%+q", val), "'")
-		if strings.HasPrefix(char, CharacterPrefix) {
-			return out + char, nil
-		}
-
-		return out + CharacterPrefix + char, nil
-
-	default:
-		return "", MakeError(ErrUnknownMimeType, serializer.MimeType())
-	}
-}
-
 // NewCharacterElement creates a new character element or an error.
 func NewCharacterElement(value rune) (Element, error) {
-	return baseFactory().make(value, CharacterType, NoTag, charSerializer)
+	return baseFactory().make(value, CharacterType, NoTag)
 }

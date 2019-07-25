@@ -161,21 +161,11 @@ var _ = Describe("Keyword in EDN", func() {
 			Ω(err).Should(BeNil())
 			Ω(elem).ShouldNot(BeNil())
 
-			edn, err := elem.Serialize(EvaEdnMimeType)
+			stream := NewStringStream()
+			err = EvaEdnMimeType.SerializeTo(stream, elem)
+			edn := stream.String()
 			Ω(err).Should(BeNil())
 			Ω(edn).Should(BeEquivalentTo(KeywordPrefix + name))
-		})
-
-		It("should serialize the keyword with one parameter without an issue", func() {
-			name := "foobar"
-
-			elem, err := NewKeywordElement(name)
-			Ω(err).Should(BeNil())
-			Ω(elem).ShouldNot(BeNil())
-
-			_, err = elem.Serialize(SerializerMimeType("InvalidSerializer"))
-			Ω(err).ShouldNot(BeNil())
-			Ω(err).Should(test.HaveMessage(ErrUnknownMimeType))
 		})
 
 		It("should serialize the keyword with two parameter without an issue", func() {
@@ -186,7 +176,9 @@ var _ = Describe("Keyword in EDN", func() {
 			Ω(err).Should(BeNil())
 			Ω(elem).ShouldNot(BeNil())
 
-			edn, err := elem.Serialize(EvaEdnMimeType)
+			stream := NewStringStream()
+			err = EvaEdnMimeType.SerializeTo(stream, elem)
+			edn := stream.String()
 			Ω(err).Should(BeNil())
 			Ω(edn).Should(BeEquivalentTo(KeywordPrefix + prefix + SymbolSeparator + name))
 		})
@@ -199,7 +191,9 @@ var _ = Describe("Keyword in EDN", func() {
 			Ω(err).Should(BeNil())
 			Ω(elem).ShouldNot(BeNil())
 
-			edn, err := elem.Serialize(EvaEdnMimeType)
+			stream := NewStringStream()
+			err = EvaEdnMimeType.SerializeTo(stream, elem)
+			edn := stream.String()
 			Ω(err).Should(BeNil())
 			Ω(edn).Should(BeEquivalentTo(KeywordPrefix + prefix + SymbolSeparator + name))
 		})
@@ -211,7 +205,9 @@ var _ = Describe("Keyword in EDN", func() {
 			Ω(err).Should(BeNil())
 			Ω(elem).ShouldNot(BeNil())
 
-			edn, err := elem.Serialize(EvaEdnMimeType)
+			stream := NewStringStream()
+			err = EvaEdnMimeType.SerializeTo(stream, elem)
+			edn := stream.String()
 			Ω(err).Should(BeNil())
 			Ω(edn).Should(BeEquivalentTo(KeywordPrefix + name))
 		})
@@ -224,7 +220,9 @@ var _ = Describe("Keyword in EDN", func() {
 			Ω(err).Should(BeNil())
 			Ω(elem).ShouldNot(BeNil())
 
-			edn, err := elem.Serialize(EvaEdnMimeType)
+			stream := NewStringStream()
+			err = EvaEdnMimeType.SerializeTo(stream, elem)
+			edn := stream.String()
 			Ω(err).Should(BeNil())
 			Ω(edn).Should(BeEquivalentTo(KeywordPrefix + prefix + SymbolSeparator + name))
 		})
@@ -237,7 +235,9 @@ var _ = Describe("Keyword in EDN", func() {
 			Ω(err).Should(BeNil())
 			Ω(elem).ShouldNot(BeNil())
 
-			edn, err := elem.Serialize(EvaEdnMimeType)
+			stream := NewStringStream()
+			err = EvaEdnMimeType.SerializeTo(stream, elem)
+			edn := stream.String()
 			Ω(err).Should(BeNil())
 			Ω(edn).Should(BeEquivalentTo(KeywordPrefix + prefix + SymbolSeparator + name))
 		})

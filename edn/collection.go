@@ -105,53 +105,6 @@ func (elem *collectionElemImpl) IterateChildren(iterator ChildIterator) (err err
 	return err
 }
 
-// collectionSerialization the element into a string or return the appropriate error.
-func collectionSerialization(hasKey bool) func(serializer Serializer, tag string, value interface{}) (composition string, err error) {
-
-	return func(serializer Serializer, tag string, value interface{}) (composition string, err error) {
-
-		switch serializer.MimeType() {
-		case EvaEdnMimeType:
-			if len(tag) > 0 {
-				composition = TagPrefix + tag + " "
-			}
-
-			val := value.(*collectionElemImpl)
-			composition += val.startSymbol
-
-			first := true
-			if err = val.IterateChildren(func(key Element, child Element) (e error) {
-				if first {
-					first = false
-				} else {
-					composition += val.separatorSymbol
-				}
-
-				var c string
-				if hasKey {
-					if c, e = key.Serialize(serializer); e == nil {
-						composition += c + val.keyValueSeparatorSymbol
-					}
-				}
-
-				if e == nil && child != nil {
-					if c, e = child.Serialize(serializer); e == nil {
-						composition += c
-					}
-				}
-
-				return e
-			}); err == nil {
-				composition += val.endSymbol
-			}
-		default:
-			err = MakeError(ErrUnknownMimeType, serializer.MimeType())
-		}
-
-		return composition, err
-	}
-}
-
 // Equals checks if the input element is equal to this element.
 func (elem *collectionElemImpl) Equals(e Element) (result bool) {
 	if elem.ElementType() == e.ElementType() {
@@ -203,39 +156,38 @@ func (elem *collectionElemImpl) add(addFunc func([]Element, []Element) []Element
 			elem.collection = addFunc(v, children)
 		case map[string][2]Element:
 
-			var serializer Serializer
-			if serializer, err = GetSerializerByType(EvaEdnMimeType); err == nil {
-				setSize := 2 // This is for maps...
-				if len(elem.keyValueSeparatorSymbol) == 0 {
-					setSize = 1 // This is for sets...
-				}
+			setSize := 2 // This is for maps...
+			if len(elem.keyValueSeparatorSymbol) == 0 {
+				setSize = 1 // This is for sets...
+			}
 
-				if len(children)%setSize == 0 {
-					childOffset := setSize - 1
+			if len(children)%setSize == 0 {
+				childOffset := setSize - 1
 
-					for i := 0; i < len(children); i += setSize {
-						var k string
-						if str, is := children[i].(*baseElemImpl); is && str.elemType == StringType {
-							k = str.value.(string)
+				for i := 0; i < len(children); i += setSize {
+					var k string
+					if str, is := children[i].(*baseElemImpl); is && str.elemType == StringType {
+						k = str.value.(string)
+					} else {
+						stream := NewStringStream()
+						err = EvaEdnMimeType.SerializeTo(stream, children[i])
+						k = stream.String()
+					}
+
+					if err == nil {
+						if _, has := v[k]; !has {
+							v[k] = [2]Element{children[i], children[i+childOffset]}
 						} else {
-							k, err = children[i].Serialize(serializer)
-						}
-
-						if err == nil {
-							if _, has := v[k]; !has {
-								v[k] = [2]Element{children[i], children[i+childOffset]}
-							} else {
-								err = MakeErrorWithFormat(ErrDuplicateKey, "Key: %s", k)
-							}
-						}
-
-						if err != nil {
-							break
+							err = MakeErrorWithFormat(ErrDuplicateKey, "Key: %s", k)
 						}
 					}
-				} else {
-					err = MakeError(ErrInvalidInput, "must have an even number of inputs.")
+
+					if err != nil {
+						break
+					}
 				}
+			} else {
+				err = MakeError(ErrInvalidInput, "must have an even number of inputs.")
 			}
 
 		default:
@@ -271,10 +223,12 @@ func (elem *collectionElemImpl) Get(key interface{}) (value Element, err error) 
 	case string:
 		realKey = k
 	case Element:
-		var serializer Serializer
-		if serializer, err = GetSerializerByType(EvaEdnMimeType); err == nil {
-			realKey, err = k.Serialize(serializer)
+		stream := &StringStream{}
+		err = EvaEdnMimeType.SerializeTo(stream, k)
+		if err != nil {
+			return nil, err
 		}
+		realKey = stream.String()
 	default:
 		err = MakeErrorWithFormat(ErrInvalidInput, "key type: %T", k)
 	}

@@ -193,7 +193,9 @@ var _ = Describe("Symbol in EDN", func() {
 			Ω(err).Should(BeNil())
 			Ω(elem).ShouldNot(BeNil())
 
-			edn, err := elem.Serialize(EvaEdnMimeType)
+			stream := NewStringStream()
+			err = EvaEdnMimeType.SerializeTo(stream, elem)
+			edn := stream.String()
 			Ω(err).Should(BeNil())
 			Ω(edn).Should(BeEquivalentTo(name))
 		})
@@ -205,19 +207,9 @@ var _ = Describe("Symbol in EDN", func() {
 			Ω(err).Should(BeNil())
 			Ω(elem).ShouldNot(BeNil())
 
-			_, err = elem.Serialize(SerializerMimeType("InvalidSerializer"))
-			Ω(err).ShouldNot(BeNil())
-			Ω(err).Should(test.HaveMessage(ErrUnknownMimeType))
-		})
-
-		It("should serialize the symbol with one parameter without an issue", func() {
-			name := "foobar"
-
-			elem, err := NewSymbolElement(name)
-			Ω(err).Should(BeNil())
-			Ω(elem).ShouldNot(BeNil())
-
-			edn, err := elem.Serialize(EvaEdnMimeType)
+			stream := NewStringStream()
+			err = EvaEdnMimeType.SerializeTo(stream, elem)
+			edn := stream.String()
 			Ω(err).Should(BeNil())
 			Ω(edn).Should(BeEquivalentTo(name))
 		})
@@ -234,7 +226,9 @@ var _ = Describe("Symbol in EDN", func() {
 			Ω(err).Should(BeNil())
 			Ω(elem).ShouldNot(BeNil())
 
-			edn, err := elem.Serialize(EvaEdnMimeType)
+			stream := NewStringStream()
+			err = EvaEdnMimeType.SerializeTo(stream, elem)
+			edn := stream.String()
 			Ω(err).Should(BeNil())
 			Ω(edn).Should(BeEquivalentTo(prefix + SymbolSeparator + name))
 		})
@@ -268,8 +262,10 @@ var _ = Describe("Symbol in EDN", func() {
 				Ω(err).Should(BeNil(), message)
 				Ω(elem).ShouldNot(BeNil(), message)
 
-				edn, err := elem.Serialize(EvaEdnMimeType)
-				Ω(err).Should(BeNil(), message)
+				stream := NewStringStream()
+				err = EvaEdnMimeType.SerializeTo(stream, elem)
+				edn := stream.String()
+				Ω(err).Should(BeNil())
 				Ω(edn).Should(BeEquivalentTo(symbol), message)
 				Ω(elem.Prefix()).Should(BeEquivalentTo(result.prefix), message)
 				Ω(elem.Name()).Should(BeEquivalentTo(result.name), message)

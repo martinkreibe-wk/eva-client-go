@@ -14,8 +14,6 @@
 
 package edn
 
-import "strconv"
-
 // fromBool convert the boolean passed in (through the interface) to an Element.
 func fromBool(input interface{}) (Element, error) {
 	v, ok := input.(bool)
@@ -41,22 +39,7 @@ func parseBoolElem(tokenValue string) (Element, error) {
 	return NewBooleanElement(val)
 }
 
-// boolSerializer takes the input value and serialize it.
-func boolSerializer(serializer Serializer, tag string, value interface{}) (string, error) {
-
-	switch serializer.MimeType() {
-	case EvaEdnMimeType:
-		var out string
-		if len(tag) > 0 {
-			out = TagPrefix + tag + " "
-		}
-		return out + strconv.FormatBool(value.(bool)), nil
-	default:
-		return "", MakeError(ErrUnknownMimeType, serializer.MimeType())
-	}
-}
-
 // NewBooleanElement creates a new boolean element or an error.
 func NewBooleanElement(value bool) (Element, error) {
-	return baseFactory().make(value, BooleanType, NoTag, boolSerializer)
+	return baseFactory().make(value, BooleanType, NoTag)
 }

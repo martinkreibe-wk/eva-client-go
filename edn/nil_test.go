@@ -57,18 +57,11 @@ var _ = Describe("Nil in EDN", func() {
 			elem, err := NewNilElement()
 			Ω(err).Should(BeNil())
 
-			edn, err := elem.Serialize(EvaEdnMimeType)
+			stream := NewStringStream()
+			err = EvaEdnMimeType.SerializeTo(stream, elem)
+			edn := stream.String()
 			Ω(err).Should(BeNil())
 			Ω(edn).Should(BeEquivalentTo("nil"))
-		})
-
-		It("should serialize without an issue", func() {
-			elem, err := NewNilElement()
-			Ω(err).Should(BeNil())
-
-			_, err = elem.Serialize(SerializerMimeType("InvalidSerializer"))
-			Ω(err).ShouldNot(BeNil())
-			Ω(err).Should(test.HaveMessage(ErrUnknownMimeType))
 		})
 	})
 

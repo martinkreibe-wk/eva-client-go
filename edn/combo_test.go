@@ -34,7 +34,9 @@ var _ = Describe("Elements in EDN", func() {
 			Ω(err).Should(BeNil())
 
 			var str string
-			str, err = id.Serialize(EvaEdnMimeType)
+			stream := NewStringStream()
+			err = EvaEdnMimeType.SerializeTo(stream, id)
+			str = stream.String()
 			Ω(err).Should(BeNil())
 
 			Ω(str).Should(BeEquivalentTo("#db/id [:db.part/db]"))
@@ -49,7 +51,9 @@ var _ = Describe("Elements in EDN", func() {
 			attr, err = NewMap(pair)
 			Ω(err).Should(BeNil())
 
-			str, err = attr.Serialize(EvaEdnMimeType)
+			stream = NewStringStream()
+			err = EvaEdnMimeType.SerializeTo(stream, attr)
+			str = stream.String()
 			Ω(err).Should(BeNil())
 
 			Ω(str).Should(HavePrefix("{"))

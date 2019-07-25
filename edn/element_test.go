@@ -15,14 +15,12 @@
 package edn
 
 import (
-	"strconv"
+	"time"
 
-	"errors"
 	"github.com/Workiva/eva-client-go/test"
 	"github.com/mattrobenolt/gocql/uuid"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"time"
 )
 
 const tag = NoTag
@@ -33,40 +31,22 @@ var _ = Describe("Elements in EDN", func() {
 
 			t := ElementType(99)
 
-			elem, err := baseFactory().make(nil, t, tag, func(serializer Serializer, tag string, i interface{}) (string, error) {
-				return "", nil
-			})
+			elem, err := baseFactory().make(nil, t, tag)
 			Ω(err).Should(BeNil())
 			Ω(elem).ShouldNot(BeNil())
 			Ω(elem.ElementType()).Should(BeIdenticalTo(t))
-		})
-
-		It("should create an base element with no error", func() {
-
-			t := ElementType(99)
-
-			elem, err := baseFactory().make(nil, t, tag, nil)
-			Ω(err).ShouldNot(BeNil())
-			Ω(elem).Should(BeNil())
-			Ω(err).Should(test.HaveMessage(ErrInvalidElement))
 		})
 
 		It("should equal the same thing if they are actually equal", func() {
 
 			value := "42"
 
-			elem, err := baseFactory().make(value, StringType, tag, func(serializer Serializer, tag string, value interface{}) (out string, e error) {
-				out = strconv.Quote(value.(string))
-				return out, e
-			})
+			elem, err := baseFactory().make(value, StringType, tag)
 			Ω(err).Should(BeNil())
 			Ω(elem).ShouldNot(BeNil())
 			Ω(elem.Value()).Should(BeEquivalentTo(value))
 
-			elem2, err := baseFactory().make(value, StringType, tag, func(serializer Serializer, tag string, value interface{}) (out string, e error) {
-				out = strconv.Quote(value.(string))
-				return out, e
-			})
+			elem2, err := baseFactory().make(value, StringType, tag)
 			Ω(err).Should(BeNil())
 			Ω(elem2).ShouldNot(BeNil())
 			Ω(elem2.Value()).Should(BeEquivalentTo(value))
@@ -78,10 +58,7 @@ var _ = Describe("Elements in EDN", func() {
 
 			value := "42"
 
-			elem, err := baseFactory().make(value, StringType, tag, func(serializer Serializer, tag string, value interface{}) (out string, e error) {
-				out = strconv.Quote(value.(string))
-				return out, e
-			})
+			elem, err := baseFactory().make(value, StringType, tag)
 
 			Ω(err).Should(BeNil())
 			Ω(elem).ShouldNot(BeNil())
@@ -103,20 +80,6 @@ var _ = Describe("Elements in EDN", func() {
 			err = elem.SetTag(tag)
 			Ω(err).Should(test.HaveMessage(ErrInvalidSymbol))
 			Ω(elem.Tag()).Should(BeEquivalentTo(orig))
-		})
-
-		It("should create an base element with no error", func() {
-
-			t := ElementType(99)
-
-			elem, err := baseFactory().make(nil, t, tag, func(serializer Serializer, tag string, i interface{}) (string, error) {
-				return "", errors.New("expected")
-
-			})
-			Ω(err).Should(BeNil())
-			Ω(elem).ShouldNot(BeNil())
-
-			Ω(func() { elem.String() }).Should(Panic())
 		})
 
 		It("should create an base element with no error", func() {

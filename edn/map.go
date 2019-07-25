@@ -44,7 +44,7 @@ func NewMap(pairs ...Pair) (elem CollectionElement, err error) {
 	}
 
 	var base *baseElemImpl
-	if base, err = baseFactory().make(coll, MapType, NoTag, collectionSerialization(true)); err == nil {
+	if base, err = baseFactory().make(coll, MapType, NoTag); err == nil {
 		coll.baseElemImpl = base
 
 		// check for errors

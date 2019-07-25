@@ -72,19 +72,11 @@ var _ = Describe("UUID in EDN", func() {
 			Ω(err).Should(BeNil())
 			Ω(elem).ShouldNot(BeNil())
 
-			edn, err := elem.Serialize(EvaEdnMimeType)
+			stream := NewStringStream()
+			err = EvaEdnMimeType.SerializeTo(stream, elem)
+			edn := stream.String()
 			Ω(err).Should(BeNil())
 			Ω(edn).Should(BeEquivalentTo("#uuid " + uuidValue))
-		})
-
-		It("should serialize the uuid without an issue", func() {
-			elem, err := NewUUIDElement(testValue)
-			Ω(err).Should(BeNil())
-			Ω(elem).ShouldNot(BeNil())
-
-			_, err = elem.Serialize(SerializerMimeType("InvalidSerializer"))
-			Ω(err).ShouldNot(BeNil())
-			Ω(err).Should(test.HaveMessage(ErrUnknownMimeType))
 		})
 	})
 

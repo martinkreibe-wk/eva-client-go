@@ -94,7 +94,11 @@ func message(ser Serializer, label string, index int, test *testInstance, elem E
 					panic(e)
 				}
 			}
-			if expected, e = m.Serialize(ser); e != nil {
+
+			stream := NewStringStream()
+			e = ser.SerializeTo(stream, elem)
+			expected = stream.String()
+			if e != nil {
 				panic(fmt.Sprintf("label: %s, index: %d, test: %s, error: %+v", label, index, test.expression, e))
 			}
 		} else {
@@ -109,10 +113,12 @@ func message(ser Serializer, label string, index int, test *testInstance, elem E
 	comp := "<nil>"
 	if elem != nil {
 		var ee error
-		comp, ee = elem.Serialize(ser)
+		stream := NewStringStream()
+		ee = ser.SerializeTo(stream, elem)
 		if ee != nil {
 			panic(ee)
 		}
+		comp = stream.String()
 	}
 
 	return fmt.Sprintf("[%d:%s] Test: '%s' -> [%v] (tag: %s) \n\tExpected: %#v\n\tActual: %s", index, label, test.expression, test.elemType, test.tag, expected, comp)
@@ -207,9 +213,10 @@ func runParserTests(elemType ElementType, definitions ...*testDefinition) {
 
 							err = collElem.IterateChildren(func(key Element, value Element) (iterErr error) {
 
-								var comp string
-								comp, iterErr = key.Serialize(ser)
+								stream := NewStringStream()
+								iterErr = ser.SerializeTo(stream, key)
 								Ω(iterErr).Should(BeNil(), message(ser, "key comp err", index, testCase, elem))
+								comp := stream.String()
 
 								if toCompare, has := coll[comp]; has {
 									Ω(value.Equals(toCompare)).Should(BeTrue(), message(ser, "child check", index, testCase, elem))
@@ -252,9 +259,10 @@ func runParserTests(elemType ElementType, definitions ...*testDefinition) {
 									}
 
 								} else {
-									var comp string
-									comp, iterErr = key.Serialize(ser)
+									stream := NewStringStream()
+									iterErr = ser.SerializeTo(stream, key)
 									Ω(iterErr).Should(BeNil(), message(ser, "key comp err", index, testCase, elem))
+									comp := stream.String()
 
 									has := false
 									keys := make([]string, 0)

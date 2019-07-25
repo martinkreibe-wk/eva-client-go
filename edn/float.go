@@ -43,21 +43,7 @@ func parseFloatElem(tokenValue string) (Element, error) {
 	return NewFloatElement(v)
 }
 
-// floatSerialize takes the input value and serialize it.
-func floatSerialize(serializer Serializer, tag string, value interface{}) (string, error) {
-	switch serializer.MimeType() {
-	case EvaEdnMimeType:
-		var out string
-		if len(tag) > 0 {
-			out = TagPrefix + tag + " "
-		}
-		return out + strconv.FormatFloat(value.(float64), 'E', -1, 64), nil
-	default:
-		return "", MakeError(ErrUnknownMimeType, serializer.MimeType())
-	}
-}
-
 // NewFloatElement creates a new float point element or an error.
 func NewFloatElement(value float64) (Element, error) {
-	return baseFactory().make(value, FloatType, NoTag, floatSerialize)
+	return baseFactory().make(value, FloatType, NoTag)
 }

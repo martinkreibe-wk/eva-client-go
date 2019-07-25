@@ -66,19 +66,12 @@ var _ = Describe("Boolean in EDN", func() {
 			Ω(err).Should(BeNil())
 			Ω(elem).ShouldNot(BeNil())
 
-			edn, err := elem.Serialize(EvaEdnMimeType)
+			var edn string
+			stream := NewStringStream()
+			err = EvaEdnMimeType.SerializeTo(stream, elem)
+			edn = stream.String()
 			Ω(err).Should(BeNil())
 			Ω(edn).Should(BeEquivalentTo("true"))
-		})
-
-		It("should serialize false without an issue", func() {
-			elem, err := NewBooleanElement(false)
-			Ω(err).Should(BeNil())
-			Ω(elem).ShouldNot(BeNil())
-
-			_, err = elem.Serialize(SerializerMimeType("InvalidSerializer"))
-			Ω(err).ShouldNot(BeNil())
-			Ω(err).Should(test.HaveMessage(ErrUnknownMimeType))
 		})
 	})
 

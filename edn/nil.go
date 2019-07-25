@@ -27,20 +27,7 @@ func parseNil(_ string) (Element, error) {
 	return NewNilElement()
 }
 
-// nilSerializer takes the input value and serialize it.
-func nilSerializer(serializer Serializer, tag string, _ interface{}) (out string, e error) {
-	switch serializer.MimeType() {
-	case EvaEdnMimeType:
-		if len(tag) > 0 {
-			out = TagPrefix + tag + " "
-		}
-		return out + "nil", nil
-	default:
-		return "", MakeError(ErrUnknownMimeType, serializer.MimeType())
-	}
-}
-
 // NewNilElement returns the nil element or an error.
 func NewNilElement() (Element, error) {
-	return baseFactory().make(nil, NilType, NoTag, nilSerializer)
+	return baseFactory().make(nil, NilType, NoTag)
 }

@@ -34,19 +34,11 @@ var _ = Describe("List in EDN", func() {
 			group, err := NewList()
 			Ω(err).Should(BeNil())
 
-			var edn string
-			edn, err = group.Serialize(EvaEdnMimeType)
+			stream := NewStringStream()
+			err = EvaEdnMimeType.SerializeTo(stream, group)
+			edn := stream.String()
 			Ω(err).Should(BeNil())
 			Ω(edn).Should(BeEquivalentTo("()"))
-		})
-
-		It("should serialize an empty list correctly", func() {
-			group, err := NewList()
-			Ω(err).Should(BeNil())
-
-			_, err = group.Serialize(SerializerMimeType("InvalidSerializer"))
-			Ω(err).ShouldNot(BeNil())
-			Ω(err).Should(test.HaveMessage(ErrUnknownMimeType))
 		})
 
 		It("should error with a nil item", func() {
@@ -78,16 +70,17 @@ var _ = Describe("List in EDN", func() {
 			Ω(group.ElementType()).Should(BeEquivalentTo(ListType))
 			Ω(group.Len()).Should(BeEquivalentTo(1))
 
-			group.Append(elem2)
+			err = group.Append(elem2)
+			Ω(err).Should(BeNil())
 			Ω(group.Len()).Should(BeEquivalentTo(2))
 
 			e1, err := group.Get(0)
 			Ω(err).Should(BeNil())
-			Ω(e1.String()).Should(BeEquivalentTo(elem.String()))
+			Ω(e1.Value()).Should(BeEquivalentTo(elem.Value()))
 
 			e2, err := group.Get(1)
 			Ω(err).Should(BeNil())
-			Ω(e2.String()).Should(BeEquivalentTo(elem2.String()))
+			Ω(e2.Value()).Should(BeEquivalentTo(elem2.Value()))
 		})
 
 		It("should be able to prepend", func() {
@@ -102,16 +95,17 @@ var _ = Describe("List in EDN", func() {
 			Ω(group.ElementType()).Should(BeEquivalentTo(ListType))
 			Ω(group.Len()).Should(BeEquivalentTo(1))
 
-			group.Prepend(elem2)
+			err = group.Prepend(elem2)
+			Ω(err).Should(BeNil())
 			Ω(group.Len()).Should(BeEquivalentTo(2))
 
 			e1, err := group.Get(1)
 			Ω(err).Should(BeNil())
-			Ω(e1.String()).Should(BeEquivalentTo(elem.String()))
+			Ω(e1.Value()).Should(BeEquivalentTo(elem.Value()))
 
 			e2, err := group.Get(0)
 			Ω(err).Should(BeNil())
-			Ω(e2.String()).Should(BeEquivalentTo(elem2.String()))
+			Ω(e2.Value()).Should(BeEquivalentTo(elem2.Value()))
 		})
 
 		It("should serialize a single nil entry in a list correctly", func() {
@@ -121,8 +115,9 @@ var _ = Describe("List in EDN", func() {
 			group, err := NewList(elem)
 			Ω(err).Should(BeNil())
 
-			var edn string
-			edn, err = group.Serialize(EvaEdnMimeType)
+			stream := NewStringStream()
+			err = EvaEdnMimeType.SerializeTo(stream, group)
+			edn := stream.String()
 			Ω(err).Should(BeNil())
 			Ω(edn).Should(BeEquivalentTo("(nil)"))
 		})
@@ -142,8 +137,9 @@ var _ = Describe("List in EDN", func() {
 			group, err = NewList(elem1, elem2, elem3)
 			Ω(err).Should(BeNil())
 
-			var edn string
-			edn, err = group.Serialize(EvaEdnMimeType)
+			stream := NewStringStream()
+			err = EvaEdnMimeType.SerializeTo(stream, group)
+			edn := stream.String()
 			Ω(err).Should(BeNil())
 			Ω(edn).Should(BeEquivalentTo("(\"foo\" \"bar\" \"faz\")"))
 

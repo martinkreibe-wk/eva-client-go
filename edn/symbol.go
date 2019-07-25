@@ -153,24 +153,6 @@ func decodeSymbol(parts ...string) (string, string, error) {
 	}
 }
 
-func symbolSerializer(serializer Serializer, tag string, value interface{}) (string, error) {
-	switch serializer.MimeType() {
-	case EvaEdnMimeType:
-		var out string
-		if len(tag) > 0 {
-			out = TagPrefix + tag + " "
-		}
-
-		if elem, is := value.(SymbolElement); is {
-			return out + elem.AppendNameOntoNamespace(elem.Name()), nil
-		}
-
-		return out, nil
-	default:
-		return "", MakeError(ErrUnknownMimeType, serializer.MimeType())
-	}
-}
-
 func symbolEqual(left, right Element) bool {
 	leftSym, is := left.(SymbolElement)
 	if !is {
@@ -200,7 +182,7 @@ func NewSymbolElement(parts ...string) (SymbolElement, error) {
 		name:   name,
 	}
 
-	base, err := baseFactory().make(symElem, SymbolType, NoTag, symbolSerializer)
+	base, err := baseFactory().make(symElem, SymbolType, NoTag)
 	if err != nil {
 		return nil, err
 	}

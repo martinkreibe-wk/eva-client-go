@@ -50,20 +50,7 @@ func instantFactory(input interface{}) (Element, error) {
 	return NewInstantElement(v)
 }
 
-func instantSerializer(serializer Serializer, tag string, value interface{}) (string, error) {
-	switch serializer.MimeType() {
-	case EvaEdnMimeType:
-		var out string
-		if len(tag) > 0 {
-			out = TagPrefix + tag + " "
-		}
-		return out + value.(time.Time).Format(time.RFC3339), nil
-	default:
-		return "", MakeError(ErrUnknownMimeType, serializer.MimeType())
-	}
-}
-
 // NewInstantElement creates a new instant element or an error.
 func NewInstantElement(value time.Time) (Element, error) {
-	return baseFactory().make(value, InstantType, InstantElementTag, instantSerializer)
+	return baseFactory().make(value, InstantType, InstantElementTag)
 }

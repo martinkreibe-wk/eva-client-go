@@ -62,20 +62,7 @@ func uuidFactory(input interface{}) (Element, error) {
 	}
 }
 
-func uuidSerializer(serializer Serializer, tag string, value interface{}) (string, error) {
-	switch serializer.MimeType() {
-	case EvaEdnMimeType:
-		var out string
-		if len(tag) > 0 {
-			out = TagPrefix + tag + " "
-		}
-		return out + value.(uuid.UUID).String(), nil
-	default:
-		return "", MakeError(ErrUnknownMimeType, serializer.MimeType())
-	}
-}
-
 // NewInstantElement creates a new instant element or an error.
 func NewUUIDElement(value uuid.UUID) (Element, error) {
-	return baseFactory().make(value, UUIDType, UUIDElementTag, uuidSerializer)
+	return baseFactory().make(value, UUIDType, UUIDElementTag)
 }

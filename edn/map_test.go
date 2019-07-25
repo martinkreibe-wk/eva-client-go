@@ -54,19 +54,11 @@ var _ = Describe("Map in EDN", func() {
 			group, err := NewMap()
 			Ω(err).Should(BeNil())
 
-			var edn string
-			edn, err = group.Serialize(EvaEdnMimeType)
+			stream := NewStringStream()
+			err = EvaEdnMimeType.SerializeTo(stream, group)
+			edn := stream.String()
 			Ω(err).Should(BeNil())
 			Ω(edn).Should(BeEquivalentTo("{}"))
-		})
-
-		It("should serialize an empty map correctly", func() {
-			group, err := NewMap()
-			Ω(err).Should(BeNil())
-
-			_, err = group.Serialize(SerializerMimeType("InvalidSerializer"))
-			Ω(err).ShouldNot(BeNil())
-			Ω(err).Should(test.HaveMessage(ErrUnknownMimeType))
 		})
 
 		It("should error with a nil item", func() {
@@ -109,8 +101,9 @@ var _ = Describe("Map in EDN", func() {
 			group, err := NewMap(pair)
 			Ω(err).Should(BeNil())
 
-			var edn string
-			edn, err = group.Serialize(EvaEdnMimeType)
+			stream := NewStringStream()
+			err = EvaEdnMimeType.SerializeTo(stream, group)
+			edn := stream.String()
 			Ω(err).Should(BeNil())
 			Ω(edn).Should(BeEquivalentTo("{nil nil}"))
 		})
@@ -131,8 +124,9 @@ var _ = Describe("Map in EDN", func() {
 			group, err := NewMap(pairs...)
 			Ω(err).Should(BeNil())
 
-			var edn string
-			edn, err = group.Serialize(EvaEdnMimeType)
+			stream := NewStringStream()
+			err = EvaEdnMimeType.SerializeTo(stream, group)
+			edn := stream.String()
 			Ω(err).Should(BeNil())
 			Ω(edn).Should(HavePrefix("{"))
 			Ω(edn).Should(HaveSuffix("}"))

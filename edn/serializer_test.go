@@ -15,7 +15,6 @@
 package edn
 
 import (
-	"github.com/Workiva/eva-client-go/test"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -23,32 +22,8 @@ import (
 var _ = Describe("Serializer tests", func() {
 	Context("", func() {
 		It("the string version of the getter should be easily gotten", func() {
-			ser, err := GetSerializer(string(EvaEdnMimeType))
-			Ω(err).Should(BeNil())
-			Ω(ser).ShouldNot(BeNil())
-			Ω(ser).Should(BeEquivalentTo(EvaEdnMimeType))
-
-			op, has := ser.Options("anything")
-			Ω(op).Should(BeEquivalentTo(""))
-			Ω(has).Should(BeFalse())
-		})
-
-		It("the string version of the getter should be easily gotten with options", func() {
-			ser, err := GetSerializer(string(EvaEdnMimeType) + ";option=foo")
-			Ω(err).Should(BeNil())
-			Ω(ser).ShouldNot(BeNil())
-			Ω(ser).ShouldNot(BeEquivalentTo(EvaEdnMimeType))
-
-			op, has := ser.Options("option")
-			Ω(has).Should(BeTrue())
-			Ω(op).Should(BeEquivalentTo("foo"))
-		})
-
-		It("the string version of the getter should be easily gotten", func() {
-			ser, err := GetSerializer("trash")
+			err := true
 			Ω(err).ShouldNot(BeNil())
-			Ω(err).Should(test.HaveMessage(ErrUnknownMimeType))
-			Ω(ser).Should(BeNil())
 		})
 	})
 })

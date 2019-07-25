@@ -14,16 +14,15 @@
 
 package edn
 
-import "strings"
+import (
+	"strings"
+)
 
 // baseElement defines the base element features.
 type baseElemImpl struct {
 
 	// elemType is the type this element houses.
 	elemType ElementType
-
-	// stringer is the mechanism to serialize this element into EDN or JSON or whatever format.
-	stringer stringerFunc
 
 	// equality is the tester for equality
 	equality equalityFunc
@@ -33,21 +32,6 @@ type baseElemImpl struct {
 
 	// value of this element.
 	value interface{}
-}
-
-func (elem *baseElemImpl) String() (result string) {
-
-	var err error
-	var serializer Serializer
-	if serializer, err = GetSerializerByType(EvaEdnMimeType); err == nil {
-		result, err = elem.Serialize(serializer)
-	}
-
-	if err != nil {
-		panic(err)
-	}
-
-	return result
 }
 
 // Equals checks if the input element is equal to this element.
@@ -63,11 +47,6 @@ func (elem *baseElemImpl) Equals(e Element) (result bool) {
 // ElementType returns the current type of this element.
 func (elem *baseElemImpl) ElementType() ElementType {
 	return elem.elemType
-}
-
-// Serialize the element into a string or return the appropriate error.
-func (elem *baseElemImpl) Serialize(serializer Serializer) (composition string, err error) {
-	return elem.stringer(serializer, elem.Tag(), elem.Value())
 }
 
 // HasTag returns true if the element has a tag prefix
