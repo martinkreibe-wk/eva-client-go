@@ -38,7 +38,9 @@ var _ = Describe("snapshot channel test", func() {
 			snap, err = source.LatestSnapshot("label")
 			Ω(err).Should(BeNil())
 			Ω(snap).ShouldNot(BeNil())
-			Ω(snap.Label()).Should(BeEquivalentTo("label"))
+			label, err := snap.Label()
+			Ω(err).Should(BeNil())
+			Ω(label).Should(BeEquivalentTo("label"))
 
 			var result Result
 			result, err = snap.Pull("[*]", "123")
@@ -69,7 +71,9 @@ var _ = Describe("snapshot channel test", func() {
 			snap, err = source.LatestSnapshot("label")
 			Ω(err).Should(BeNil())
 			Ω(snap).ShouldNot(BeNil())
-			Ω(snap.Label()).Should(BeEquivalentTo("label"))
+			label, err := snap.Label()
+			Ω(err).Should(BeNil())
+			Ω(label).Should(BeEquivalentTo("label"))
 
 			var result Result
 			result, err = snap.Invoke("func")

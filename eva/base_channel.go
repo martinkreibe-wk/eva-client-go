@@ -14,7 +14,11 @@
 
 package eva
 
-import "github.com/Workiva/eva-client-go/edn"
+import (
+	"strconv"
+
+	"github.com/Workiva/eva-client-go/edn"
+)
 
 const (
 
@@ -29,7 +33,7 @@ type BaseChannel struct {
 }
 
 // NewBaseChannel creates a new base channel from the channel type, the label and the source.
-func NewBaseChannel(refType ChannelType, source Source, properties map[string]edn.Serializable) (channel *BaseChannel, err error) {
+func NewBaseChannel(refType ChannelType, source Source, properties map[string]edn.Element) (channel *BaseChannel, err error) {
 	if source != nil {
 		if ref, err := newReference(refType, properties); err == nil {
 			channel = &BaseChannel{
@@ -45,22 +49,23 @@ func NewBaseChannel(refType ChannelType, source Source, properties map[string]ed
 }
 
 // Label to this particular channel
-func (channel *BaseChannel) Label() (label string) {
-	ser := channel.ref.GetProperty(LabelReferenceProperty)
-	if ser != nil {
-		switch val := ser.(type) {
-		case edn.Element:
-			if val.ElementType() == edn.StringType {
-				label = val.Value().(string)
-			} else {
-				label = val.String()
-			}
-		case *rawStringImpl, rawStringImpl:
-			label = val.String()
-		}
+func (channel *BaseChannel) Label() (string, error) {
+	ser, err := channel.ref.GetProperty(LabelReferenceProperty)
+	if err != nil {
+		return "", err
 	}
 
-	return label
+	switch ser.ElementType() {
+	case edn.StringType:
+		return ser.Value().(string), nil
+	case edn.SymbolType, edn.KeywordType:
+		symbol := ser.(edn.SymbolElement)
+		return symbol.Name(), nil
+	case edn.IntegerType:
+		return strconv.FormatInt(ser.Value().(int64), 10), nil
+	default:
+		return "", edn.MakeErrorWithFormat(edn.ErrInvalidElement, "expected a string, int, symbol or keyword. Got: %s", ser.ElementType())
+	}
 }
 
 // Type of channel.

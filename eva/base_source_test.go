@@ -112,9 +112,14 @@ var _ = Describe("base source test", func() {
 			conn, err = source.Connection("label")
 			Ω(err).Should(BeNil())
 			Ω(conn).ShouldNot(BeNil())
-			Ω(conn.Label()).Should(BeEquivalentTo("label"))
 
-			conn, err = source.Connection(edn.NewStringElement("label2"))
+			label, err := conn.Label()
+			Ω(err).Should(BeNil())
+			Ω(label).Should(BeEquivalentTo("label"))
+
+			elem, err := edn.NewStringElement("label2")
+			Ω(err).Should(BeNil())
+			conn, err = source.Connection(elem)
 			Ω(err).Should(BeNil())
 			Ω(conn).ShouldNot(BeNil())
 			Ω(conn.Label()).Should(BeEquivalentTo("label2"))
@@ -138,9 +143,14 @@ var _ = Describe("base source test", func() {
 			snap, err = source.LatestSnapshot("label")
 			Ω(err).Should(BeNil())
 			Ω(snap).ShouldNot(BeNil())
-			Ω(snap.Label()).Should(BeEquivalentTo("label"))
 
-			snap, err = source.LatestSnapshot(edn.NewStringElement("label2"))
+			label, err := snap.Label()
+			Ω(err).Should(BeNil())
+			Ω(label).Should(BeEquivalentTo("label"))
+
+			elem1, err := edn.NewStringElement("label2")
+			Ω(err).Should(BeNil())
+			snap, err = source.LatestSnapshot(elem1)
 			Ω(err).Should(BeNil())
 			Ω(snap).ShouldNot(BeNil())
 			Ω(snap.Label()).Should(BeEquivalentTo("label2"))
@@ -150,14 +160,25 @@ var _ = Describe("base source test", func() {
 			Ω(snap).ShouldNot(BeNil())
 			Ω(snap.Label()).Should(BeEquivalentTo("label3"))
 			Ω(snap.AsOf()).ShouldNot(BeNil())
-			Ω(*snap.AsOf()).Should(BeEquivalentTo(123))
 
-			snap, err = source.AsOfSnapshot(edn.NewStringElement("label4"), edn.NewIntegerElement(456))
+			asOf, err := snap.AsOf()
+			Ω(err).Should(BeNil())
+			Ω(*asOf).Should(BeEquivalentTo(123))
+
+			elem2, err := edn.NewStringElement("label4")
+			Ω(err).Should(BeNil())
+			elem3, err := edn.NewIntegerElement(456)
+			Ω(err).Should(BeNil())
+
+			snap, err = source.AsOfSnapshot(elem2, elem3)
 			Ω(err).Should(BeNil())
 			Ω(snap).ShouldNot(BeNil())
 			Ω(snap.Label()).Should(BeEquivalentTo("label4"))
 			Ω(snap.AsOf()).ShouldNot(BeNil())
-			Ω(*snap.AsOf()).Should(BeEquivalentTo(456))
+
+			asOf, err = snap.AsOf()
+			Ω(err).Should(BeNil())
+			Ω(*asOf).Should(BeEquivalentTo(456))
 		})
 	})
 

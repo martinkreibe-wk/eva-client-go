@@ -64,12 +64,10 @@ func (config sourceConfigImpl) Setting(name string) (value string, has bool) {
 
 // Serializer this source emanates with.
 func (config sourceConfigImpl) Serializer() (serializer edn.Serializer, err error) {
-	if value, has := config["mime"]; has {
-		serializer, err = edn.GetSerializer(value)
-	}
 
-	if err == nil && serializer == nil {
-		serializer = edn.DefaultMimeType
+	serializer = edn.EvaEdnMimeType
+	if value, has := config["mime"]; has {
+		serializer = edn.SerializerMimeType(value)
 	}
 
 	return serializer, err

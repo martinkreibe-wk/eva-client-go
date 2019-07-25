@@ -24,13 +24,12 @@ import (
 var _ = Describe("Base Channel", func() {
 
 	ct := ChannelType("ch-type")
-	label := edn.NewStringElement("label")
 
 	Context("with the default marshaller", func() {
 		It("", func() {
 			src := &mockSource{}
 
-			bc, err := NewBaseChannel(ct, src, map[string]edn.Serializable{})
+			bc, err := NewBaseChannel(ct, src, map[string]edn.Element{})
 			Ω(err).Should(BeNil())
 			Ω(bc.Type()).Should(BeEquivalentTo(ct))
 			Ω(bc.Reference()).ShouldNot(BeNil())
@@ -39,14 +38,14 @@ var _ = Describe("Base Channel", func() {
 
 	tenant := "org"
 
-	asOfSnapshot := func(edn.Serializable) (channel SnapshotChannel, err error) {
+	asOfSnapshot := func(edn.Element) (channel SnapshotChannel, err error) {
 
 		channel = &BaseSnapshotChannel{}
 
 		return channel, err
 	}
 
-	goodTransact := func(data edn.Serializable) (result Result, err error) {
+	goodTransact := func(data edn.Element) (result Result, err error) {
 		return nil, nil
 	}
 
@@ -54,7 +53,10 @@ var _ = Describe("Base Channel", func() {
 		It("", func() {
 			src := &mockSource{}
 
-			_, err := NewBaseConnectionChannel(label, src, goodTransact, nil)
+			label, err := edn.NewStringElement("label")
+			Ω(err).Should(BeNil())
+
+			_, err = NewBaseConnectionChannel(label, src, goodTransact, nil)
 
 			Ω(err).ShouldNot(BeNil())
 			Ω(err).Should(test.HaveMessage(edn.ErrInvalidInput))
@@ -65,6 +67,9 @@ var _ = Describe("Base Channel", func() {
 	Context("with the default marshaller", func() {
 		It("", func() {
 			src := &mockSource{}
+
+			label, err := edn.NewStringElement("label")
+			Ω(err).Should(BeNil())
 
 			bcc, err := NewBaseConnectionChannel(label, src, goodTransact, asOfSnapshot)
 

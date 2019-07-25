@@ -175,7 +175,7 @@ var _ = Describe("Source test", func() {
 			tenant, err := NewTenant("foo")
 			Ω(err).Should(BeNil())
 
-			source, err := NewBaseSource(config, tenant, &mockSource{}, func(label edn.Serializable, source Source) (c ConnectionChannel, e error) {
+			source, err := NewBaseSource(config, tenant, &mockSource{}, func(label edn.Element, source Source) (c ConnectionChannel, e error) {
 				return c, e
 			}, queryImpl)
 
@@ -187,7 +187,7 @@ var _ = Describe("Source test", func() {
 		})
 
 		It("", func() {
-			source, err := NewBaseSource(nil, nil, &mockSource{}, func(label edn.Serializable, source Source) (c ConnectionChannel, e error) {
+			source, err := NewBaseSource(nil, nil, &mockSource{}, func(label edn.Element, source Source) (c ConnectionChannel, e error) {
 				return c, e
 			}, queryImpl)
 

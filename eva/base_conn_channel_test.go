@@ -40,7 +40,9 @@ var _ = Describe("base connection channel test", func() {
 			conn, err = source.Connection("label")
 			Ω(err).Should(BeNil())
 			Ω(conn).ShouldNot(BeNil())
-			Ω(conn.Label()).Should(BeEquivalentTo("label"))
+			label, err := conn.Label()
+			Ω(err).Should(BeNil())
+			Ω(label).Should(BeEquivalentTo("label"))
 
 			var result Result
 			result, err = conn.Transact("foo")
@@ -53,7 +55,9 @@ var _ = Describe("base connection channel test", func() {
 			Ω(has).Should(BeTrue())
 			Ω(str).Should(BeEquivalentTo("test"))
 
-			result, err = conn.Transact(edn.NewStringElement("trx"))
+			trxElem, err := edn.NewStringElement("trx")
+			Ω(err).Should(BeNil())
+			result, err = conn.Transact(trxElem)
 			Ω(err).Should(BeNil())
 			Ω(result).ShouldNot(BeNil())
 

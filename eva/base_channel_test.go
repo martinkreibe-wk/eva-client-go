@@ -60,10 +60,12 @@ var _ = Describe("Base Channel test", func() {
 			ct := ChannelType("test")
 			src := &mockSource{}
 
+			elem, err := edn.NewStringElement("test")
+			Ω(err).Should(BeNil())
+
 			var channel *BaseChannel
-			var err error
-			channel, err = NewBaseChannel(ct, src, map[string]edn.Serializable{
-				"foo": edn.NewStringElement("test"),
+			channel, err = NewBaseChannel(ct, src, map[string]edn.Element{
+				"foo": elem,
 			})
 			Ω(channel).ShouldNot(BeNil())
 			Ω(err).Should(BeNil())
@@ -74,7 +76,13 @@ var _ = Describe("Base Channel test", func() {
 			Ω(channel.Reference()).ShouldNot(BeNil())
 			Ω(channel.Reference().Type()).Should(BeEquivalentTo(ct))
 
-			Ω(channel.Reference().GetProperty("foo").String()).ShouldNot(BeEquivalentTo("test"))
+			ref := channel.Reference()
+			Ω(err).Should(BeNil())
+
+			prop, err := ref.GetProperty("foo")
+			Ω(err).Should(BeNil())
+
+			Ω(prop.Value()).Should(BeEquivalentTo("test"))
 		})
 
 		It("should accept references with fields", func() {
@@ -82,17 +90,22 @@ var _ = Describe("Base Channel test", func() {
 			ct := ChannelType("test")
 			src := &mockSource{}
 
+			elem, err := edn.NewIntegerElement(123)
+			Ω(err).Should(BeNil())
+
 			var channel *BaseChannel
-			var err error
-			channel, err = NewBaseChannel(ct, src, map[string]edn.Serializable{
-				LabelReferenceProperty: edn.NewIntegerElement(123),
+			channel, err = NewBaseChannel(ct, src, map[string]edn.Element{
+				LabelReferenceProperty: elem,
 			})
 			Ω(channel).ShouldNot(BeNil())
 			Ω(err).Should(BeNil())
 
 			Ω(channel.Type()).Should(BeEquivalentTo(ct))
 			Ω(channel.Source()).Should(BeEquivalentTo(src))
-			Ω(channel.Label()).Should(BeEquivalentTo("123"))
+
+			label, err := channel.Label()
+			Ω(err).Should(BeNil())
+			Ω(label).Should(BeEquivalentTo("123"))
 		})
 	})
 })

@@ -20,7 +20,7 @@ type ChannelType string
 type Channel interface {
 
 	// Label to this particular channel
-	Label() string
+	Label() (string, error)
 
 	// Type of channel.
 	Type() ChannelType

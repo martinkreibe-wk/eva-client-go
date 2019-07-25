@@ -34,11 +34,11 @@ type SnapshotChannel interface {
 	Invoke(function interface{}, parameters ...interface{}) (Result, error)
 
 	// AsOf the time specified.
-	AsOf() *int
+	AsOf() (*int, error)
 }
 
-type PullImplementation func(pattern edn.Serializable, ids edn.Serializable, params ...interface{}) (result Result, err error)
-type InvokeImplementation func(function edn.Serializable, parameters ...interface{}) (result Result, err error)
+type PullImplementation func(pattern edn.Element, ids edn.Element, params ...interface{}) (result Result, err error)
+type InvokeImplementation func(function edn.Element, parameters ...interface{}) (result Result, err error)
 
 type BaseSnapshotChannel struct {
 	*BaseChannel
@@ -46,14 +46,13 @@ type BaseSnapshotChannel struct {
 	invokeImpl InvokeImplementation
 }
 
-func NewBaseSnapshotChannel(label edn.Serializable, source Source, pullImpl PullImplementation, invokeImpl InvokeImplementation, asOf interface{}) (channel *BaseSnapshotChannel, err error) {
+func NewBaseSnapshotChannel(label edn.Element, source Source, pullImpl PullImplementation, invokeImpl InvokeImplementation, asOf interface{}) (channel *BaseSnapshotChannel, err error) {
 
-	var asOfSer edn.Serializable
-	if asOfSer, err = decodeSerializable(asOf); err == nil {
+	if asOfSer, err := edn.NewPrimitiveElement(asOf); err == nil {
 		var base *BaseChannel
 		if base, err = NewBaseChannel(
 			SnapshotReferenceType,
-			source, map[string]edn.Serializable{
+			source, map[string]edn.Element{
 				LabelReferenceProperty: label,
 				AsOfReferenceProperty:  asOfSer,
 			}); err == nil {
@@ -69,37 +68,34 @@ func NewBaseSnapshotChannel(label edn.Serializable, source Source, pullImpl Pull
 }
 
 // Label to this particular channel
-func (channel *BaseSnapshotChannel) Label() string {
+func (channel *BaseSnapshotChannel) Label() (string, error) {
 	return channel.BaseChannel.Label()
 }
 
 // AsOf the time specified.
-func (channel *BaseSnapshotChannel) AsOf() (asOf *int) {
+func (channel *BaseSnapshotChannel) AsOf() (*int, error) {
 
-	if asOfSer := channel.Reference().GetProperty(AsOfReferenceProperty); asOfSer != nil {
-		switch val := asOfSer.(type) {
-		case edn.Element:
-			if val.ElementType() == edn.IntegerType {
-				v := int(val.Value().(int64))
-				asOf = &v
-			}
-		case rawIntImpl:
-			v := int(val.Int())
-			asOf = &v
-		}
+	asOfSer, err := channel.Reference().GetProperty(AsOfReferenceProperty)
+	if err != nil {
+		return nil, err
 	}
 
-	return asOf
+	if asOfSer.ElementType() != edn.IntegerType {
+		return nil, edn.MakeError(edn.ErrInvalidElement, "expected an integer")
+	}
+
+	asOf := int(asOfSer.Value().(int64))
+	return &asOf, nil
 }
 
 // Pull from the snapshot.
 func (channel *BaseSnapshotChannel) Pull(pattern interface{}, ids interface{}, parameters ...interface{}) (result Result, err error) {
 
-	var ptrn edn.Serializable
-	var idSer edn.Serializable
+	var ptrn edn.Element
+	var idSer edn.Element
 
-	if ptrn, err = decodeSerializable(pattern); err == nil {
-		idSer, err = decodeSerializable(ids)
+	if ptrn, err = edn.NewPrimitiveElement(pattern); err == nil {
+		idSer, err = edn.NewPrimitiveElement(ids)
 	}
 
 	if err == nil {
@@ -112,8 +108,8 @@ func (channel *BaseSnapshotChannel) Pull(pattern interface{}, ids interface{}, p
 // Invoke from the snapshot
 func (channel *BaseSnapshotChannel) Invoke(function interface{}, parameters ...interface{}) (result Result, err error) {
 
-	var funcElem edn.Serializable
-	funcElem, err = decodeSerializable(function)
+	var funcElem edn.Element
+	funcElem, err = edn.NewPrimitiveElement(function)
 
 	if err == nil {
 		result, err = channel.invokeImpl(funcElem, parameters...)

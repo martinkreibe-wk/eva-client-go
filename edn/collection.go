@@ -49,6 +49,9 @@ type CollectionElement interface {
 	// Get the key from the collection.
 	Get(key interface{}) (Element, error)
 
+	// Set a value.
+	Set(interface{}, Element) error
+
 	// Merge one collection into another.
 	Merge(CollectionElement) error
 }
@@ -148,7 +151,7 @@ func (elem *collectionElemImpl) Equals(e Element) (result bool) {
 	return result
 }
 
-func (elem *collectionElemImpl) add(addFunc func([]Element, []Element) []Element, children []Element) (err error) {
+func (elem *collectionElemImpl) add(addFunc func([]Element, []Element) []Element, override bool, children []Element) (err error) {
 
 	if len(children) != 0 {
 		switch v := elem.collection.(type) {
@@ -177,6 +180,8 @@ func (elem *collectionElemImpl) add(addFunc func([]Element, []Element) []Element
 					if err == nil {
 						if _, has := v[k]; !has {
 							v[k] = [2]Element{children[i], children[i+childOffset]}
+						} else if override {
+							v[k] = [2]Element{children[i], children[i+childOffset]}
 						} else {
 							err = MakeErrorWithFormat(ErrDuplicateKey, "Key: %s", k)
 						}
@@ -202,14 +207,25 @@ func (elem *collectionElemImpl) add(addFunc func([]Element, []Element) []Element
 func (elem *collectionElemImpl) Append(children ...Element) error {
 	return elem.add(func(in []Element, c []Element) []Element {
 		return append(in, c...)
-	}, children)
+	}, false, children)
 }
 
 // Prepend will add the appropriate children. Note that a map must have 2 parameters.
 func (elem *collectionElemImpl) Prepend(children ...Element) error {
 	return elem.add(func(in []Element, c []Element) []Element {
 		return append(c, in...)
-	}, children)
+	}, false, children)
+}
+
+func (elem *collectionElemImpl) Set(key interface{}, value Element) error {
+	k, err := NewPrimitiveElement(key)
+	if err != nil {
+		return err
+	}
+
+	return elem.add(func(in []Element, c []Element) []Element {
+		return append(c, in...)
+	}, true, []Element{k, value})
 }
 
 // Get the value from the collection.

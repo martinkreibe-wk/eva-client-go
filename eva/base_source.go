@@ -16,7 +16,7 @@ package eva
 
 import "github.com/Workiva/eva-client-go/edn"
 
-type ConnectionChannelMaker func(label edn.Serializable, source Source) (channel ConnectionChannel, err error)
+type ConnectionChannelMaker func(label edn.Element, source Source) (channel ConnectionChannel, err error)
 
 // QueryImplementation defines the query implementation function.
 type QueryImplementation func(interface{}, ...interface{}) (Result, error)
@@ -66,14 +66,18 @@ func (source *BaseSource) Category() string {
 	return source.config.Category()
 }
 
-func (source *BaseSource) Connection(label interface{}) (conn ConnectionChannel, err error) {
+func (source *BaseSource) Connection(label interface{}) (ConnectionChannel, error) {
 
-	var elem edn.Serializable
+	var elem edn.Element
 	switch v := label.(type) {
-	case edn.Serializable:
+	case edn.Element:
 		elem = v
 	default:
-		elem, err = decodeSerializable(label)
+		var err error
+		elem, err = edn.NewPrimitiveElement(label)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return source.maker(elem, source.source)

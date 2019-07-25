@@ -18,16 +18,16 @@ import "github.com/Workiva/eva-client-go/edn"
 
 // Reference
 type Reference interface {
-	edn.Serializable
+	edn.CollectionElement
 
 	// Type of reference
 	Type() ChannelType
 
 	// AddProperty
-	AddProperty(name string, value edn.Serializable) error
+	AddProperty(name string, value edn.Element) error
 
 	// GetProperty
-	GetProperty(name string) edn.Serializable
+	GetProperty(name string) (edn.Element, error)
 }
 
 const (
@@ -37,113 +37,97 @@ const (
 )
 
 type refImpl struct {
-	refType    ChannelType
-	properties map[string]edn.Serializable
+	edn.CollectionElement
 }
 
 // newReference creates a new request.
-func newReference(refType ChannelType, properties map[string]edn.Serializable) (ref Reference, err error) {
+func newReference(refType ChannelType, properties map[string]edn.Element) (Reference, error) {
 
-	if properties == nil {
-		properties = make(map[string]edn.Serializable)
+	var refMap edn.CollectionElement
+	var err error
+
+	if refMap, err = edn.NewMap(); err != nil {
+		return nil, err
 	}
 
-	ref = &refImpl{
-		refType:    refType,
-		properties: properties,
+	ref := &refImpl{refMap}
+	if err = ref.SetTag(string(refType)); err != nil {
+		return nil, err
 	}
 
-	return ref, err
-}
-
-func (ref *refImpl) String() string {
-	var str string
-	PanicOnError(func() error {
-		var err error
-		str, err = ref.Serialize(edn.EvaEdnMimeType)
-		return err
-	})
-	return str
-}
-
-// Serialize the reference.
-func (ref *refImpl) Serialize(with edn.Serializer) (value string, err error) {
-	if with != nil {
-		var elem edn.CollectionElement
-		if elem, err = edn.NewMap(); err == nil {
-			for name, value := range ref.properties {
-				if value != nil {
-					var symbol edn.SymbolElement
-					if symbol, err = edn.NewKeywordElement(name); err == nil {
-						switch v := value.(type) {
-						case edn.Element:
-							err = elem.Append(symbol, v)
-						case rawStringImpl:
-							err = elem.Append(symbol, edn.NewStringElement(v.String()))
-						case rawIntImpl:
-							err = elem.Append(symbol, edn.NewIntegerElement(v.Int()))
-						default:
-							err = edn.MakeError(edn.ErrInvalidInput, value)
-						}
-					}
-				}
-
-				if err != nil {
-					break
-				}
+	for name, value := range properties {
+		if value != nil {
+			err := ref.AddProperty(name, value)
+			if err != nil {
+				return nil, err
 			}
 		}
-
-		if err == nil {
-			if err = elem.SetTag(string(ref.Type())); err == nil {
-				value, err = elem.Serialize(with)
-			}
-		}
-	} else {
-		err = edn.MakeError(ErrInvalidSerializer, nil)
 	}
 
-	return value, err
+	return ref, nil
 }
 
 // Type of this reference
 func (ref *refImpl) Type() ChannelType {
-	return ref.refType
+	return ChannelType(ref.Tag())
 }
 
 // AddProperty will add the property by name, or if the value is nil, will remove it.
-func (ref *refImpl) AddProperty(name string, value edn.Serializable) error {
-	if value != nil {
-		ref.properties[name] = value
-	} else {
-		delete(ref.properties, name)
+func (ref *refImpl) AddProperty(name string, value edn.Element) error {
+
+	var symbol edn.SymbolElement
+	var err error
+	if symbol, err = edn.NewKeywordElement(name); err != nil {
+		return err
 	}
 
-	return nil
+	return ref.Set(symbol, value)
 }
 
 // GetProperty returns the property by name
-func (ref *refImpl) GetProperty(name string) edn.Serializable {
-	return ref.properties[name]
+func (ref *refImpl) GetProperty(name string) (edn.Element, error) {
+	var symbol edn.SymbolElement
+	var err error
+	if symbol, err = edn.NewKeywordElement(name); err != nil {
+		return nil, err
+	}
+
+	return ref.Get(symbol)
 }
 
-func NewConnectionReference(label string) (ref Reference, err error) {
-	return newReference(ConnectionReferenceType, map[string]edn.Serializable{
-		LabelReferenceProperty: RawString(label),
+func NewConnectionReference(label string) (Reference, error) {
+
+	elem, err := edn.NewStringElement(label)
+	if err != nil {
+		return nil, err
+	}
+
+	return newReference(ConnectionReferenceType, map[string]edn.Element{
+		LabelReferenceProperty: elem,
 	})
 }
 
 func NewSnapshotAsOfReference(label string, asOf interface{}) (ref Reference, err error) {
 
-	var asOfElem edn.Serializable
-	if asOfElem, err = decodeSerializable(asOf); err == nil {
-		ref, err = newReference(SnapshotReferenceType, map[string]edn.Serializable{
-			LabelReferenceProperty: RawString(label),
-			AsOfReferenceProperty:  asOfElem,
-		})
+	elem, err := edn.NewStringElement(label)
+	if err != nil {
+		return nil, err
 	}
 
-	return ref, err
+	properties := map[string]edn.Element{
+		LabelReferenceProperty: elem,
+	}
+
+	if asOf != nil {
+		var asOfElem edn.Element
+		if asOfElem, err = edn.NewPrimitiveElement(asOf); err != nil {
+			return nil, err
+		}
+
+		properties[AsOfReferenceProperty] = asOfElem
+	}
+
+	return newReference(SnapshotReferenceType, properties)
 }
 
 func NewSnapshotReference(label string) (req Reference, err error) {

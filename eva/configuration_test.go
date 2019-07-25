@@ -60,7 +60,7 @@ var _ = Describe("Configuration test", func() {
 			ser, err = src.Serializer()
 			Ω(err).Should(BeNil())
 
-			Ω(ser.MimeType()).Should(BeEquivalentTo(edn.EvaEdnMimeType))
+			Ω(ser).Should(BeEquivalentTo(edn.EvaEdnMimeType))
 
 			var srcType string
 			srcType = src.Type()
@@ -95,7 +95,7 @@ var _ = Describe("Configuration test", func() {
 			ser, err = src.Serializer()
 			Ω(err).Should(BeNil())
 
-			Ω(ser.MimeType()).Should(BeEquivalentTo(edn.EvaEdnMimeType))
+			Ω(ser).Should(BeEquivalentTo(edn.EvaEdnMimeType))
 		})
 	})
 

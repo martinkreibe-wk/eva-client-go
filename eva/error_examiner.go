@@ -39,7 +39,7 @@ type ErrorExaminer func([]byte) error
 func GetErrorExaminer(serializer edn.Serializer) (examiner ErrorExaminer, err error) {
 
 	if serializer != nil {
-		switch serializer.MimeType() {
+		switch serializer {
 		case edn.EvaEdnMimeType:
 			examiner = ednErrorExaminer
 		default:

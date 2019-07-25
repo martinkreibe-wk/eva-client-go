@@ -24,16 +24,16 @@ type BaseConnectionChannel struct {
 	tenantsWithSchema map[string]bool
 }
 
-type AsOfSnapshotImpl func(asOf edn.Serializable) (SnapshotChannel, error)
-type TransactImpl func(transaction edn.Serializable) (Result, error)
+type AsOfSnapshotImpl func(asOf edn.Element) (SnapshotChannel, error)
+type TransactImpl func(transaction edn.Element) (Result, error)
 
-func NewBaseConnectionChannel(label edn.Serializable, source Source, transactImpl TransactImpl, asOfSnapshotImpl AsOfSnapshotImpl) (channel *BaseConnectionChannel, err error) {
+func NewBaseConnectionChannel(label edn.Element, source Source, transactImpl TransactImpl, asOfSnapshotImpl AsOfSnapshotImpl) (channel *BaseConnectionChannel, err error) {
 
 	if label != nil && transactImpl != nil && asOfSnapshotImpl != nil {
 		var base *BaseChannel
 		if base, err = NewBaseChannel(
 			ConnectionReferenceType,
-			source, map[string]edn.Serializable{
+			source, map[string]edn.Element{
 				LabelReferenceProperty: label,
 			}); err == nil {
 			channel = &BaseConnectionChannel{
@@ -53,15 +53,19 @@ func NewBaseConnectionChannel(label edn.Serializable, source Source, transactImp
 // Transact the data to the channel
 func (channel *BaseConnectionChannel) Transact(data ...interface{}) (result Result, err error) {
 
-	var transactions []edn.Serializable
+	var transactions []edn.Element
 	if len(data) > 0 {
 		for _, item := range data {
 
 			switch typedItem := item.(type) {
-			case string:
-				transactions = append(transactions, RawString(typedItem))
-			case edn.Serializable:
+			case edn.Element:
 				transactions = append(transactions, typedItem)
+			case string:
+				elem, err := edn.NewPrimitiveElement(typedItem)
+				if err != nil {
+					return nil, err
+				}
+				transactions = append(transactions, elem)
 			default:
 				err = edn.MakeErrorWithFormat(edn.ErrInvalidInput, "Unsupported type: %T", typedItem)
 			}
@@ -81,16 +85,16 @@ func (channel *BaseConnectionChannel) Transact(data ...interface{}) (result Resu
 }
 
 // Label to this particular channel
-func (channel *BaseConnectionChannel) Label() string {
+func (channel *BaseConnectionChannel) Label() (string, error) {
 	return channel.BaseChannel.Label()
 }
 
 // AsOfSnapshot returns the snapshot channel as of the rules provided.
 func (channel *BaseConnectionChannel) AsOfSnapshot(data interface{}) (snap SnapshotChannel, err error) {
 
-	var elem edn.Serializable
+	var elem edn.Element
 	if data != nil {
-		elem, err = decodeSerializable(data)
+		elem, err = edn.NewPrimitiveElement(data)
 	}
 
 	if err == nil {

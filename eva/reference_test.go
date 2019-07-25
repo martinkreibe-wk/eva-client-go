@@ -17,7 +17,6 @@ package eva
 import (
 	"fmt"
 	"github.com/Workiva/eva-client-go/edn"
-	"github.com/Workiva/eva-client-go/test"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -44,9 +43,10 @@ var _ = Describe("reference test", func() {
 			Ω(ref).ShouldNot(BeNil())
 			Ω(ref.Type()).Should(BeEquivalentTo(ConnectionReferenceType))
 
-			var v string
-			v, err = ref.Serialize(edn.EvaEdnMimeType)
+			stream := edn.NewStringStream()
+			err = edn.EvaEdnMimeType.SerializeTo(stream, ref)
 			Ω(err).Should(BeNil())
+			v := stream.String()
 			Ω(v).Should(BeEquivalentTo("#eva.client.service/connection-ref {:label \"label\"}"))
 		})
 
@@ -56,29 +56,32 @@ var _ = Describe("reference test", func() {
 			Ω(ref).ShouldNot(BeNil())
 			Ω(ref.Type()).Should(BeEquivalentTo(SnapshotReferenceType))
 
-			var v string
-			v, err = ref.Serialize(edn.EvaEdnMimeType)
+			stream := edn.NewStringStream()
+			err = edn.EvaEdnMimeType.SerializeTo(stream, ref)
 			Ω(err).Should(BeNil())
+			v := stream.String()
 			Ω(v).Should(BeEquivalentTo("#eva.client.service/snapshot-ref {:label \"label\"}"))
 		})
 
 		It("create snap ref with a label and asOf", func() {
-			ref, err := NewSnapshotAsOfReference("label", edn.NewIntegerElement(123))
+			elem, err := edn.NewIntegerElement(123)
+			Ω(err).Should(BeNil())
+
+			ref, err := NewSnapshotAsOfReference("label", elem)
 			Ω(err).Should(BeNil())
 			Ω(ref).ShouldNot(BeNil())
 			Ω(ref.Type()).Should(BeEquivalentTo(SnapshotReferenceType))
 
-			var v string
-			v, err = ref.Serialize(edn.EvaEdnMimeType)
+			stream := edn.NewStringStream()
+			err = edn.EvaEdnMimeType.SerializeTo(stream, ref)
 			Ω(err).Should(BeNil())
+			v := stream.String()
 			Ω(v).Should(HavePrefix("#eva.client.service/snapshot-ref {"))
 			Ω(v).Should(ContainSubstring(":as-of 123"))
 			Ω(v).Should(ContainSubstring(":label \"label\""))
 			Ω(v).Should(HaveSuffix("}"))
 		})
 	})
-
-	mapRep := edn.EvaEdnMimeType
 
 	Context("normally", func() {
 
@@ -90,35 +93,40 @@ var _ = Describe("reference test", func() {
 			Ω(ref).ShouldNot(BeNil())
 			Ω(ref.Type()).Should(BeEquivalentTo(chanType))
 
-			var v string
-			v, err = ref.Serialize(mapRep)
+			stream := edn.NewStringStream()
+			err = edn.EvaEdnMimeType.SerializeTo(stream, ref)
 			Ω(err).Should(BeNil())
-			Ω(v).Should(BeEquivalentTo(fmt.Sprintf("#%s {}", chanType)))
-
-			_, err = ref.Serialize(nil)
-			Ω(err).ShouldNot(BeNil())
-			Ω(err).Should(test.HaveMessage(ErrInvalidSerializer))
-
-			v = ref.String()
+			v := stream.String()
 			Ω(v).Should(BeEquivalentTo(fmt.Sprintf("#%s {}", chanType)))
 		})
 
 		It("handle properties correctly", func() {
 			chanType := ChannelType("taco")
 
-			ref, err := newReference(chanType, map[string]edn.Serializable{
-				"prop1": edn.NewStringElement("value1"),
-				"prop2": edn.NewStringElement("value2"),
-				"prop3": RawString("str"),
-				"prop4": RawInt(123),
+			prop1, err := edn.NewStringElement("value1")
+			Ω(err).Should(BeNil())
+			prop2, err := edn.NewStringElement("value2")
+			Ω(err).Should(BeNil())
+			prop3, err := edn.NewStringElement("str")
+			Ω(err).Should(BeNil())
+			prop4, err := edn.NewIntegerElement(123)
+			Ω(err).Should(BeNil())
+
+			ref, err := newReference(chanType, map[string]edn.Element{
+				"prop1": prop1,
+				"prop2": prop2,
+				"prop3": prop3,
+				"prop4": prop4,
 			})
 			Ω(err).Should(BeNil())
 			Ω(ref).ShouldNot(BeNil())
 			Ω(ref.Type()).Should(BeEquivalentTo(chanType))
 
-			var v string
-			v, err = ref.Serialize(mapRep)
+			stream := edn.NewStringStream()
+			err = edn.EvaEdnMimeType.SerializeTo(stream, ref)
 			Ω(err).Should(BeNil())
+			v := stream.String()
+
 			Ω(v).Should(ContainSubstring(fmt.Sprintf(":prop1 \"value1\"")))
 			Ω(v).Should(ContainSubstring(fmt.Sprintf(":prop2 \"value2\"")))
 			Ω(v).Should(ContainSubstring(fmt.Sprintf(":prop3 \"str\"")))
@@ -126,11 +134,23 @@ var _ = Describe("reference test", func() {
 			Ω(v).Should(HavePrefix(fmt.Sprintf("#%s {", chanType)))
 			Ω(v).Should(HaveSuffix("}"))
 
-			ref.AddProperty("prop5", edn.NewStringElement("new-str"))
-			ref.AddProperty("prop3", nil)
-			ref.AddProperty("prop2", edn.NewStringElement("value2.2"))
+			prop5, err := edn.NewStringElement("new-str")
+			Ω(err).Should(BeNil())
 
-			v = ref.String()
+			prop6, err := edn.NewStringElement("value2.2")
+			Ω(err).Should(BeNil())
+
+			err = ref.AddProperty("prop5", prop5)
+			Ω(err).Should(BeNil())
+			err = ref.AddProperty("prop3", nil)
+			Ω(err).Should(BeNil())
+			err = ref.AddProperty("prop2", prop6)
+			Ω(err).Should(BeNil())
+
+			stream = edn.NewStringStream()
+			err = edn.EvaEdnMimeType.SerializeTo(stream, ref)
+			Ω(err).Should(BeNil())
+			v = stream.String()
 			Ω(v).Should(HavePrefix("#" + string(chanType)))
 			Ω(v).Should(ContainSubstring(":prop1 \"value1\""))
 			Ω(v).Should(ContainSubstring(":prop2 \"value2.2\""))
@@ -138,21 +158,5 @@ var _ = Describe("reference test", func() {
 			Ω(v).Should(ContainSubstring(":prop4 123"))
 			Ω(v).Should(HaveSuffix("}"))
 		})
-
-		It("should not panic if there is no error", func() {
-			chanType := ChannelType("taco")
-
-			ref, err := newReference(chanType, map[string]edn.Serializable{
-				"thing": &mockSerializable{},
-			})
-			Ω(err).Should(BeNil())
-			Ω(ref).ShouldNot(BeNil())
-			Ω(ref.Type()).Should(BeEquivalentTo(chanType))
-
-			_, err = ref.Serialize(mapRep)
-			Ω(err).ShouldNot(BeNil())
-			Ω(err).Should(test.HaveMessage(edn.ErrInvalidInput))
-		})
-
 	})
 })

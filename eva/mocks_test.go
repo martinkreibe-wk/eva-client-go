@@ -66,21 +66,21 @@ func mockQuery(_ interface{}, _ ...interface{}) (Result, error) {
 	return &mockResult{}, nil
 }
 
-func makeMockConnChannel(label edn.Serializable, source Source) (c ConnectionChannel, e error) {
+func makeMockConnChannel(label edn.Element, source Source) (c ConnectionChannel, e error) {
 	return NewBaseConnectionChannel(
 		label,
 		source,
-		func(transaction edn.Serializable) (Result, error) {
+		func(transaction edn.Element) (Result, error) {
 			return &mockResult{}, nil
 		},
-		func(asOf edn.Serializable) (SnapshotChannel, error) {
+		func(asOf edn.Element) (SnapshotChannel, error) {
 			return NewBaseSnapshotChannel(
 				label,
 				source,
-				func(pattern edn.Serializable, ids edn.Serializable, params ...interface{}) (result Result, err error) {
+				func(pattern edn.Element, ids edn.Element, params ...interface{}) (result Result, err error) {
 					return &mockResult{}, nil
 				},
-				func(function edn.Serializable, parameters ...interface{}) (result Result, err error) {
+				func(function edn.Element, parameters ...interface{}) (result Result, err error) {
 					return &mockResult{}, nil
 				},
 				asOf)
