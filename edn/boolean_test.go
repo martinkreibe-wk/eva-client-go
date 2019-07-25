@@ -25,8 +25,8 @@ var _ = Describe("Boolean in EDN", func() {
 	Context("", func() {
 
 		It("should create elements from the factory", func() {
-			fact, has := DefaultLexer.GetFactory(BooleanType, NoTag)
-			Ω(has).Should(BeTrue())
+			fact, err := DefaultLexer.GetFactory(BooleanType, NoTag)
+			Ω(err).Should(BeNil())
 			elem, err := fact(true)
 			Ω(err).Should(BeNil())
 			Ω(elem.ElementType()).Should(BeEquivalentTo(BooleanType))
@@ -34,8 +34,8 @@ var _ = Describe("Boolean in EDN", func() {
 		})
 
 		It("should not create elements from the factory if the input is not a the right type", func() {
-			fact, has := DefaultLexer.GetFactory(BooleanType, NoTag)
-			Ω(has).Should(BeTrue())
+			fact, err := DefaultLexer.GetFactory(BooleanType, NoTag)
+			Ω(err).Should(BeNil())
 			elem, err := fact("true")
 			Ω(err).ShouldNot(BeNil())
 			Ω(err).Should(test.HaveMessage(ErrInvalidInput))

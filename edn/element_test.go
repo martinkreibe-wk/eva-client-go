@@ -217,7 +217,8 @@ var _ = Describe("Elements in EDN", func() {
 			err := lexer.init()
 			Ω(err).Should(BeNil())
 
-			lexer.RemoveFactory(UUIDType, UUIDElementTag)
+			err = lexer.RemoveFactory(UUIDType, UUIDElementTag)
+			Ω(err).Should(BeNil())
 
 			elem, err := NewPrimitiveElementWithLexer(lexer, id)
 			Ω(err).ShouldNot(BeNil())

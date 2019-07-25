@@ -26,8 +26,8 @@ var _ = Describe("Integer in EDN", func() {
 		It("should create elements from the factory", func() {
 			v := int64(123)
 
-			fact, has := DefaultLexer.GetFactory(IntegerType, NoTag)
-			Ω(has).Should(BeTrue())
+			fact, err := DefaultLexer.GetFactory(IntegerType, NoTag)
+			Ω(err).Should(BeNil())
 			elem, err := fact(v)
 			Ω(err).Should(BeNil())
 			Ω(elem.ElementType()).Should(BeEquivalentTo(IntegerType))
@@ -37,8 +37,8 @@ var _ = Describe("Integer in EDN", func() {
 		It("should not create elements from the factory if the input is not a the right type", func() {
 			v := "foo"
 
-			fact, has := DefaultLexer.GetFactory(IntegerType, NoTag)
-			Ω(has).Should(BeTrue())
+			fact, err := DefaultLexer.GetFactory(IntegerType, NoTag)
+			Ω(err).Should(BeNil())
 			elem, err := fact(v)
 			Ω(err).ShouldNot(BeNil())
 			Ω(err).Should(test.HaveMessage(ErrInvalidInput))

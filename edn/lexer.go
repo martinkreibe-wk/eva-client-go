@@ -18,15 +18,21 @@ import (
 	"io"
 )
 
-type PrimitiveProcessor func(value string) (Element, error)
-type CollectionProcessor func(elements ...Element) (el CollectionElement, e error)
+type PrimitiveElementParser func(string) (Element, error)
+type CollectionProcessor func(...Element) (CollectionElement, error)
 
 // ElementTypeFactory defines the factory for an element.
-type ElementTypeFactory func(interface{}) (Element, error)
+type ElementFactory func(interface{}) (Element, error)
+
+/*
+func (factory ElementFactory) Parse(string) (Element, error) {
+	return elem, err
+}
+*/
 
 // Lexer defines the lexical analyser for the
 type Lexer interface {
-	GetFactory(elementType ElementType, tag string) (ElementTypeFactory, bool)
+	GetFactory(ElementType, string) (ElementFactory, error)
 
-	Parse(data io.Reader) (Element, error)
+	Parse(io.Reader) (Element, error)
 }

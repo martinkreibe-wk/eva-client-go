@@ -89,7 +89,7 @@ func runScanner(scanner *lexmachine.Scanner) (tokType tokenType, elems []Element
 }
 
 type lexerImpl struct {
-	factories map[ElementType]map[string]ElementTypeFactory
+	factories map[ElementType]map[string]ElementFactory
 	lex       *lexmachine.Lexer
 }
 
@@ -100,7 +100,7 @@ type collProcDef struct {
 }
 
 type primitiveDef struct {
-	processor PrimitiveProcessor
+	processor PrimitiveElementParser
 	pattern   string
 	tag       string
 }
@@ -171,7 +171,7 @@ func (lexer *lexerImpl) init() error {
 		},
 	}
 
-	lexer.factories = map[ElementType]map[string]ElementTypeFactory{
+	lexer.factories = map[ElementType]map[string]ElementFactory{
 		NilType: {
 			NoTag: fromNil,
 		},
@@ -426,26 +426,34 @@ func (lexer *lexerImpl) Parse(data io.Reader) (Element, error) {
 	}
 }
 
-func (lexer *lexerImpl) GetFactory(elementType ElementType, tag string) (ElementTypeFactory, bool) {
-	lexer.init()
+func (lexer *lexerImpl) GetFactory(elementType ElementType, tag string) (ElementFactory, error) {
+	if err := lexer.init(); err != nil {
+		return nil, err
+	}
 
 	if lexer.factories == nil {
-		return nil, false
+		return nil, MakeError(ErrParserError, "No factories")
 	}
 
 	if _, has := lexer.factories[elementType]; !has {
-		return nil, false
+		return nil, nil
 	}
 
 	factory, has := lexer.factories[elementType][tag]
-	return factory, has
+	if !has {
+		return nil, nil
+	}
+
+	return factory, nil
 }
 
-func (lexer *lexerImpl) RemoveFactory(elementType ElementType, tag string) {
-	lexer.init()
+func (lexer *lexerImpl) RemoveFactory(elementType ElementType, tag string) error {
+	if err := lexer.init(); err != nil {
+		return err
+	}
 
 	if lexer.factories == nil {
-		return
+		return nil
 	}
 
 	if _, has := lexer.factories[elementType]; has {
@@ -457,4 +465,6 @@ func (lexer *lexerImpl) RemoveFactory(elementType ElementType, tag string) {
 			delete(lexer.factories, elementType)
 		}
 	}
+
+	return nil
 }

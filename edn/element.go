@@ -108,9 +108,13 @@ func NewPrimitiveElementWithLexer(lexer Lexer, value interface{}) (Element, erro
 		return nil, err
 	}
 
-	factory, has := lexer.GetFactory(stereotype, tag)
-	if !has {
-		return nil, MakeErrorWithFormat(ErrInvalidElement, "type: `%s`, tag: `%s`", stereotype.Name(), tag)
+	factory, err := lexer.GetFactory(stereotype, tag)
+	if err != nil {
+		return nil, err
+	}
+
+	if factory == nil {
+		return nil, MakeErrorWithFormat(ErrInvalidElement, "type: %s", stereotype.Name())
 	}
 
 	return factory(val)
