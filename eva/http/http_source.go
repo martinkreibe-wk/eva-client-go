@@ -170,23 +170,20 @@ func (source *httpSourceImpl) call(method string, uri string, form url.Values) (
 		var req *http.Request
 		client := &http.Client{}
 
-		var serializer edn.Serializer
-		if serializer, err = source.Serializer(); err == nil {
-			if req, err = http.NewRequest(method, uri, strings.NewReader(form.Encode())); err == nil {
+		if req, err = http.NewRequest(method, uri, strings.NewReader(form.Encode())); err == nil {
 
-				if corrId, has := source.Tenant().CorrelationId(); has {
-					req.Header.Add("_cid", corrId)
-				}
+			if corrId, has := source.Tenant().CorrelationId(); has {
+				req.Header.Add("_cid", corrId)
+			}
 
-				req.Header.Add("Content-Type", XFormContentType)
-				req.Header.Add("Accept", serializer.MimeType().String())
+			req.Header.Add("Content-Type", XFormContentType)
+			req.Header.Add("Accept", string(edn.EvaEdnMimeType))
 
-				if source.roots != nil {
-					client.Transport = &http.Transport{
-						TLSClientConfig: &tls.Config{
-							RootCAs: source.roots,
-						},
-					}
+			if source.roots != nil {
+				client.Transport = &http.Transport{
+					TLSClientConfig: &tls.Config{
+						RootCAs: source.roots,
+					},
 				}
 			}
 		}
@@ -246,10 +243,17 @@ func (source *httpSourceImpl) queryImpl(query interface{}, parameters ...interfa
 		switch q := query.(type) {
 		case string:
 			trx = q
-		case edn.Serializable:
+		case edn.Element:
 			var serializer edn.Serializer
 			if serializer, err = source.Serializer(); err == nil {
-				trx, err = q.Serialize(serializer)
+
+				stream := edn.NewStringStream()
+				err = serializer.SerializeTo(stream, q)
+				if err != nil {
+					return nil, err
+				}
+
+				trx = stream.String()
 			}
 		default:
 			err = edn.MakeErrorWithFormat(ErrUnsupportedType, "query type: %T", q)
@@ -277,8 +281,14 @@ func (source *httpSourceImpl) fillForm(form url.Values, parameters ...interface{
 			switch val := param.(type) {
 			case string:
 				v = val
-			case edn.Serializable:
-				v, err = val.Serialize(serializer)
+			case edn.Element:
+				stream := edn.NewStringStream()
+				err = serializer.SerializeTo(stream, val)
+				if err != nil {
+					return err
+				}
+
+				v = stream.String()
 			default:
 				err = edn.MakeErrorWithFormat(ErrUnsupportedType, "parameter type: %T", val)
 			}

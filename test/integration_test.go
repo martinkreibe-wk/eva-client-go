@@ -33,6 +33,15 @@ type httpTester struct {
 	label  string
 }
 
+func ElementToString(val edn.Element) string {
+	stream := edn.NewStringStream()
+	err := edn.EvaEdnMimeType.SerializeTo(stream, val)
+	if err != nil {
+		panic(err)
+	}
+	return stream.String()
+}
+
 func newTester(server, port, category, label, tenant string) *httpTester {
 
 	config, err := eva.NewConfiguration(fmt.Sprintf(`{
@@ -101,7 +110,7 @@ func (tester *httpTester) transact(format string, args ...interface{}) (r *trans
 
 									var part edn.Element
 									if part, e2 = keyColl.Get(0); e2 == nil {
-										p := part.String()
+										p := ElementToString(part)
 										var id edn.Element
 										if id, e2 = keyColl.Get(1); e2 == nil {
 
@@ -137,14 +146,14 @@ func (tester *httpTester) transact(format string, args ...interface{}) (r *trans
 								if key.ElementType() == edn.KeywordType {
 									switch ke := k.(edn.SymbolElement); ke.Name() {
 									case "label":
-										r.beforeLabel = v.String()
+										r.beforeLabel = ElementToString(v)
 									case "as-of":
 										r.beforeT = v.Value().(int64)
 									default:
-										e2 = fmt.Errorf("unexpected keys in the `db-before` map, got: %s", k.String())
+										e2 = fmt.Errorf("unexpected keys in the `db-before` map, got: %s", ElementToString(k))
 									}
 								} else {
-									e2 = fmt.Errorf("expected only keyword keys in the `db-before` map, got: %s", k.String())
+									e2 = fmt.Errorf("expected only keyword keys in the `db-before` map, got: %s", ElementToString(k))
 								}
 								return e2
 							})
@@ -158,14 +167,14 @@ func (tester *httpTester) transact(format string, args ...interface{}) (r *trans
 								if key.ElementType() == edn.KeywordType {
 									switch ke := k.(edn.SymbolElement); ke.Name() {
 									case "label":
-										r.afterLabel = v.String()
+										r.afterLabel = ElementToString(v)
 									case "as-of":
 										r.afterT = v.Value().(int64)
 									default:
-										e2 = fmt.Errorf("unexpected keys in the `db-after` map, got: %s", k.String())
+										e2 = fmt.Errorf("unexpected keys in the `db-after` map, got: %s", ElementToString(k))
 									}
 								} else {
-									e2 = fmt.Errorf("expected only keyword keys in the `db-after` map, got: %s", k.String())
+									e2 = fmt.Errorf("expected only keyword keys in the `db-after` map, got: %s", ElementToString(k))
 								}
 								return e2
 							})
@@ -205,7 +214,7 @@ func (tester *httpTester) transact(format string, args ...interface{}) (r *trans
 									}
 
 								} else {
-									e2 = fmt.Errorf("expected vectors with `datom` tags in `tx-data`, Got: %s", v.String())
+									e2 = fmt.Errorf("expected vectors with `datom` tags in `tx-data`, Got: %s", ElementToString(v))
 								}
 
 								return e2
@@ -214,10 +223,10 @@ func (tester *httpTester) transact(format string, args ...interface{}) (r *trans
 							e = fmt.Errorf("unexpected `tx-data` to be a list")
 						}
 					default:
-						e = fmt.Errorf("unexpected key value: %s", key.String())
+						e = fmt.Errorf("unexpected key value: %s", ElementToString(key))
 					}
 				} else {
-					e = fmt.Errorf("expected only keyword keys in the map, got: %s", key.String())
+					e = fmt.Errorf("expected only keyword keys in the map, got: %s", ElementToString(key))
 				}
 
 				return e
@@ -389,14 +398,18 @@ var _ = Describe("General integration tests", func() {
 				Ω(err).Should(BeNil())
 				Ω(snap).ShouldNot(BeNil())
 
-				result = t.query(QueryForAuthor, snap, edn.NewStringElement("First Book"))
+				elem, err := edn.NewStringElement("First Book")
+				Ω(err).Should(BeNil())
+				result = t.query(QueryForAuthor, snap, elem)
 				Ω(result).Should(BeEquivalentTo("\"James Madison\""))
 
 				snap, err = eva.NewSnapshotReference(label)
 				Ω(err).Should(BeNil())
 				Ω(snap).ShouldNot(BeNil())
 
-				result = t.query(QueryForAuthor, snap, edn.NewStringElement("First Book"))
+				elem2, err := edn.NewStringElement("First Book")
+				Ω(err).Should(BeNil())
+				result = t.query(QueryForAuthor, snap, elem2)
 				Ω(result).Should(BeEquivalentTo("\"Gilgamesh\""))
 
 				transactResult = t.transact(AddManyBooks)

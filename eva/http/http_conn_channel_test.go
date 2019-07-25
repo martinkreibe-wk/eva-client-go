@@ -46,7 +46,8 @@ var _ = Describe("Connection Channel Test", func() {
 			Ω(err).Should(BeNil())
 			Ω(source).ShouldNot(BeNil())
 
-			label := edn.NewStringElement("test")
+			label, err := edn.NewStringElement("test")
+			Ω(err).Should(BeNil())
 
 			channel, err := newHttpConnChannel(label, &mockSource{})
 			Ω(err).Should(BeNil())
@@ -75,7 +76,8 @@ var _ = Describe("Connection Channel Test", func() {
 
 			if httpSource, is := source.(*httpSourceImpl); is {
 				httpSource.callClient = fakeGoodCaller(edn.EvaEdnMimeType.String())
-				label := edn.NewStringElement("test")
+				label, err := edn.NewStringElement("test")
+				Ω(err).Should(BeNil())
 
 				channel, err := newHttpConnChannel(label, source)
 				Ω(err).Should(BeNil())
@@ -111,7 +113,8 @@ var _ = Describe("Connection Channel Test", func() {
 
 			if httpSource, is := source.(*httpSourceImpl); is {
 				httpSource.callClient = fakeGoodCaller(edn.EvaEdnMimeType.String())
-				label := edn.NewStringElement("test")
+				label, err := edn.NewStringElement("test")
+				Ω(err).Should(BeNil())
 
 				channel, err := newHttpConnChannel(label, &mockSource{})
 				Ω(err).Should(BeNil())

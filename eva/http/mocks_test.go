@@ -49,5 +49,5 @@ func (source *mockSource) Query(query interface{}, parameters ...interface{}) (r
 
 // CanLog checks if the logger can log.
 func (source *mockSource) Serializer() (edn.Serializer, error) {
-	return edn.DefaultMimeType, nil
+	return edn.EvaEdnMimeType, nil
 }

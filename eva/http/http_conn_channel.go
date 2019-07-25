@@ -27,7 +27,7 @@ type httpConnChanImpl struct {
 }
 
 // newHttpConnChannel creates a new connection channel.
-func newHttpConnChannel(label edn.Serializable, source eva.Source) (channel eva.ConnectionChannel, err error) {
+func newHttpConnChannel(label edn.Element, source eva.Source) (channel eva.ConnectionChannel, err error) {
 
 	httpConn := &httpConnChanImpl{}
 
@@ -41,37 +41,44 @@ func newHttpConnChannel(label edn.Serializable, source eva.Source) (channel eva.
 }
 
 // asOfSnapshot is the implementation for getting a snapshot at a particular reference.
-func (connChan *httpConnChanImpl) asOfSnapshot(t edn.Serializable) (channel eva.SnapshotChannel, err error) {
+func (connChan *httpConnChanImpl) asOfSnapshot(t edn.Element) (channel eva.SnapshotChannel, err error) {
 	return newHttpSnapChannel(connChan, t)
 }
 
 // transact will transact an edn to the eva database.
 // Submits a transaction, blocking until a result is available.
-func (connChan *httpConnChanImpl) transact(transaction edn.Serializable) (result eva.Result, err error) {
+func (connChan *httpConnChanImpl) transact(transaction edn.Element) (result eva.Result, err error) {
 	form := url.Values{}
 
 	var serializer edn.Serializer
-	if serializer, err = connChan.Source().Serializer(); err == nil {
-		if ref := connChan.Reference(); ref != nil {
-			var str string
-			if str, err = ref.Serialize(serializer); err == nil {
-				form.Add("reference", str)
-			}
+	if serializer, err = connChan.Source().Serializer(); err != nil {
+		return nil, err
+	}
+
+	if ref := connChan.Reference(); ref != nil {
+		stream := edn.NewStringStream()
+		err = serializer.SerializeTo(stream, ref)
+		if err != nil {
+			return nil, err
 		}
 
-		if err == nil {
-			var trxStr string
-			if trxStr, err = transaction.Serialize(serializer); err == nil {
-				form.Add("transaction", trxStr)
-			}
-			switch source := connChan.Source().(type) {
-			case *httpSourceImpl:
-				uri := source.formulateUrl("transact")
-				result, err = source.call(http.MethodPost, uri, form)
-			default:
-				err = edn.MakeErrorWithFormat(ErrUnsupportedType, "source type: %T", source)
-			}
-		}
+		form.Add("reference", stream.String())
+	}
+
+	stream := edn.NewStringStream()
+	err = serializer.SerializeTo(stream, transaction)
+	if err != nil {
+		return nil, err
+	}
+
+	form.Add("transaction", stream.String())
+
+	switch source := connChan.Source().(type) {
+	case *httpSourceImpl:
+		uri := source.formulateUrl("transact")
+		result, err = source.call(http.MethodPost, uri, form)
+	default:
+		err = edn.MakeErrorWithFormat(ErrUnsupportedType, "source type: %T", source)
 	}
 
 	return result, err

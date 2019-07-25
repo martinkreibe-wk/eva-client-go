@@ -27,14 +27,19 @@ type httpSnapChanImpl struct {
 	connChan *httpConnChanImpl
 }
 
-func newHttpSnapChannel(connChan *httpConnChanImpl, t edn.Serializable) (channel eva.SnapshotChannel, err error) {
+func newHttpSnapChannel(connChan *httpConnChanImpl, t edn.Element) (channel eva.SnapshotChannel, err error) {
 
 	snap := &httpSnapChanImpl{
 		connChan: connChan,
 	}
 
 	var base *eva.BaseSnapshotChannel
-	if base, err = eva.NewBaseSnapshotChannel(connChan.Reference().GetProperty(eva.LabelReferenceProperty), connChan.Source(), snap.pull, snap.invoke, t); err == nil {
+	label, err := connChan.Reference().GetProperty(eva.LabelReferenceProperty)
+	if err != nil {
+		return nil, err
+	}
+
+	if base, err = eva.NewBaseSnapshotChannel(label, connChan.Source(), snap.pull, snap.invoke, t); err == nil {
 		snap.BaseSnapshotChannel = base
 		channel = snap
 	}
@@ -42,24 +47,32 @@ func newHttpSnapChannel(connChan *httpConnChanImpl, t edn.Serializable) (channel
 	return channel, err
 }
 
-func (snap *httpSnapChanImpl) invoke(function edn.Serializable, parameters ...interface{}) (result eva.Result, err error) {
+func (snap *httpSnapChanImpl) invoke(function edn.Element, parameters ...interface{}) (result eva.Result, err error) {
 	uri := snap.connChan.Source().(*httpSourceImpl).formulateUrl("invoke")
 
 	var serializer edn.Serializer
 	if serializer, err = snap.connChan.Source().(*httpSourceImpl).Serializer(); err == nil {
 		form := url.Values{}
 		if err = snap.connChan.Source().(*httpSourceImpl).fillForm(form, parameters...); err == nil {
-			var query string
-			if query, err = function.Serialize(serializer); err == nil {
-				form.Set("function", query)
 
-				if ref := snap.Reference(); ref != nil {
-					var str string
-					if str, err = ref.Serialize(serializer); err == nil {
-						form.Add("reference", str)
-						result, err = snap.connChan.Source().(*httpSourceImpl).call(http.MethodPost, uri, form)
-					}
+			stream := edn.NewStringStream()
+			err = serializer.SerializeTo(stream, function)
+			if err != nil {
+				return nil, err
+			}
+
+			form.Set("function", stream.String())
+
+			if ref := snap.Reference(); ref != nil {
+
+				stream = edn.NewStringStream()
+				err = serializer.SerializeTo(stream, ref)
+				if err != nil {
+					return nil, err
 				}
+
+				form.Add("reference", stream.String())
+				result, err = snap.connChan.Source().(*httpSourceImpl).call(http.MethodPost, uri, form)
 			}
 		}
 	}
@@ -67,7 +80,7 @@ func (snap *httpSnapChanImpl) invoke(function edn.Serializable, parameters ...in
 	return result, err
 }
 
-func (snap *httpSnapChanImpl) pull(pattern edn.Serializable, ids edn.Serializable, params ...interface{}) (result eva.Result, err error) {
+func (snap *httpSnapChanImpl) pull(pattern edn.Element, ids edn.Element, params ...interface{}) (result eva.Result, err error) {
 
 	uri := snap.connChan.Source().(*httpSourceImpl).formulateUrl("pull")
 	form := url.Values{}
@@ -75,27 +88,29 @@ func (snap *httpSnapChanImpl) pull(pattern edn.Serializable, ids edn.Serializabl
 	var serializer edn.Serializer
 	if serializer, err = snap.connChan.Source().(*httpSourceImpl).Serializer(); err == nil {
 
-		if err == nil {
-
-			var ptrnStr string
-			if ptrnStr, err = pattern.Serialize(serializer); err == nil {
-				form.Add("pattern", ptrnStr)
-
-				var idsStr string
-				if idsStr, err = ids.Serialize(serializer); err == nil {
-					form.Add("ids", idsStr)
-				}
-			}
-
-			if err == nil {
-				if ref := snap.Reference(); ref != nil {
-					var str string
-					if str, err = ref.Serialize(serializer); err == nil {
-						form.Add("reference", str)
-					}
-				}
-			}
+		stream := edn.NewStringStream()
+		err = serializer.SerializeTo(stream, pattern)
+		if err != nil {
+			return nil, err
 		}
+
+		form.Add("pattern", stream.String())
+
+		stream = edn.NewStringStream()
+		err = serializer.SerializeTo(stream, ids)
+		if err != nil {
+			return nil, err
+		}
+
+		form.Add("ids", stream.String())
+
+		stream = edn.NewStringStream()
+		err = serializer.SerializeTo(stream, snap.Reference())
+		if err != nil {
+			return nil, err
+		}
+
+		form.Add("reference", stream.String())
 	}
 
 	if err == nil {

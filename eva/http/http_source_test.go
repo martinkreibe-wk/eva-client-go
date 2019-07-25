@@ -826,7 +826,9 @@ var _ = Describe("Binding Test", func() {
 			if httpSource, is := source.(*httpSourceImpl); is {
 				httpSource.callClient = fakeGoodCaller(edn.EvaEdnMimeType.String())
 
-				res, err := httpSource.queryImpl(edn.NewStringElement("foo"))
+				foo, err := edn.NewStringElement("foo")
+				Ω(err).Should(BeNil())
+				res, err := httpSource.queryImpl(foo)
 				Ω(err).Should(BeNil())
 				Ω(res).ShouldNot(BeNil())
 			} else {
@@ -1018,7 +1020,10 @@ var _ = Describe("Binding Test", func() {
 			Ω(err).Should(BeNil())
 			Ω(source).ShouldNot(BeNil())
 
-			err = source.(*httpSourceImpl).fillForm(url.Values{}, edn.NewStringElement("foo"))
+			foo, err := edn.NewStringElement("foo")
+			Ω(err).Should(BeNil())
+
+			err = source.(*httpSourceImpl).fillForm(url.Values{}, foo)
 			Ω(err).Should(BeNil())
 		})
 

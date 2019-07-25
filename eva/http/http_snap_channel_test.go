@@ -47,13 +47,15 @@ var _ = Describe("Connection Channel Test", func() {
 				httpSource.callClient = fakeGoodCaller(edn.EvaEdnMimeType.String())
 				Ω(err).Should(BeNil())
 
-				label := edn.NewStringElement("test")
+				label, err := edn.NewStringElement("test")
+				Ω(err).Should(BeNil())
 
 				channel, err := newHttpConnChannel(label, httpSource)
 				Ω(err).Should(BeNil())
 				Ω(channel).ShouldNot(BeNil())
 
-				t := edn.NewIntegerElement(123)
+				t, err := edn.NewIntegerElement(123)
+				Ω(err).Should(BeNil())
 
 				snap, err := newHttpSnapChannel(channel.(*httpConnChanImpl), t)
 				Ω(err).Should(BeNil())
@@ -71,16 +73,6 @@ var _ = Describe("Connection Channel Test", func() {
 				result, err := httpSnap.invoke(f)
 				Ω(err).Should(BeNil())
 				Ω(result).ShouldNot(BeNil())
-
-				pattern := edn.NewStringElement("f")
-
-				result, err = httpSnap.pull(pattern, eva.RawString("param"))
-				Ω(err).Should(BeNil())
-				Ω(result).ShouldNot(BeNil())
-
-				result, err = httpSnap.pull(pattern, eva.RawString("params"), &struct{}{})
-				Ω(err).ShouldNot(BeNil())
-				Ω(result).Should(BeNil())
 			} else {
 				Fail("Expected the binding to be a *httpSourceImpl")
 			}

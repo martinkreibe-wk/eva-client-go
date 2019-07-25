@@ -15,11 +15,12 @@
 package http
 
 import (
-	"github.com/Workiva/eva-client-go/edn"
-	"github.com/Workiva/eva-client-go/eva"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+
+	"github.com/Workiva/eva-client-go/edn"
+	"github.com/Workiva/eva-client-go/eva"
 )
 
 const (
@@ -48,10 +49,11 @@ func newHttpResult(req *http.Request, form url.Values, resp *http.Response) (res
 	var serializer edn.Serializer
 	var contentType string
 	if contentType = resp.Header.Get("Content-Type"); len(contentType) > 0 {
-		serializer, err = edn.GetSerializer(contentType)
-	} else {
-		serializer = edn.DefaultMimeType
+		if contentType != string(edn.EvaEdnMimeType) {
+			return nil, edn.MakeErrorWithFormat(ErrServiceError, "Unexpected Mime-Type: %s", contentType)
+		}
 	}
+	serializer = edn.EvaEdnMimeType
 
 	var examiner eva.ErrorExaminer
 	if err == nil {
